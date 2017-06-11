@@ -72,7 +72,7 @@ functions:
       resource: users
 
   usersDelete:
-    handler: lambda/users.update
+    handler: lambda/users.delete
     timeout: 10
     events:
       - http:

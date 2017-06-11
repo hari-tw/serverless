@@ -22,11 +22,11 @@ const createUser = user => {
 }
 
 const userInfo = (email) => {
-  const timestamp = new Date().getTime()
+  const timestamp = new Date().toISOString()
   return {
     id: UUID.v1(),
     email: email,
-    submittedAt: timestamp,
+    createdAt: timestamp,
     updatedAt: timestamp
   }
 }
@@ -45,9 +45,9 @@ module.exports.create = (event, context, callback) => {
 
   createUser(userInfo(email))
   .then(res => {
+    console.log(`Item created with email ${email}`)
     callback(null, Reply.success({
-      message: `Sucessfully submitted user with email ${email}`,
-      candidateId: res.id
+      id: res.id
     }))
   })
   .catch(err => {
@@ -70,11 +70,12 @@ module.exports.get = (event, context, callback) => {
 
   dynamoDb.get(params).promise()
     .then(result => {
+      console.log(`Item found with id ${event.pathParameters.id}`)
       callback(null, Reply.success(result.Item))
     })
     .catch(error => {
       console.error(error)
-      callback(new Error('Couldn\'t fetch candidate.'))
+      callback(new Error('Couldn\'t fetch item.'))
       return
     })
 }
@@ -84,7 +85,7 @@ module.exports.get = (event, context, callback) => {
 module.exports.list = (event, context, callback) => {
   const params = {
     TableName: process.env.TABLE_USERS,
-    ProjectionExpression: 'id, email'
+    ProjectionExpression: 'id, email, createdAt, deletedAt'
   }
 
   console.log('Scanning Users Table.')
@@ -104,18 +105,97 @@ module.exports.list = (event, context, callback) => {
 // Update
 // --------------------------------------------------------
 module.exports.update = (event, context, callback) => {
-  const response = {
-    statusCode: 200,
-    headers: {
-      'Access-Control-Allow-Origin': '*', // Required for CORS support to work
-      // 'Access-Control-Allow-Credentials': true // Required for cookies, authorization headers with HTTPS
-    },
-    body: JSON.stringify({
-      message: 'User Updated!',
-      input: event,
-      // environment: process.env
-    })
+  const requestBody = JSON.parse(event.body)
+  const name = requestBody.name
+
+  if (typeof name !== 'string') {
+    console.error('Validation Failed')
+    callback(new Error('Couldn\'t submit user because of validation errors.'))
+    return
   }
 
-  callback(null, response)
+  const params = {
+    TableName: process.env.TABLE_USERS,
+    Key: {
+      id: event.pathParameters.id
+    },
+    UpdateExpression: 'set fullName = :n',
+    ExpressionAttributeValues: {
+      ':n': name
+    },
+    ConditionExpression: [
+      'attribute_exists(id)'
+      // 'attribute_not_exists(deletedAt)'
+    ],
+    ReturnValues: 'ALL_NEW'
+    // ReturnValues: 'UPDATED_NEW'
+  }
+
+  dynamoDb.update(params).promise()
+    .then(result => {
+      console.log(`Item updated with id ${event.pathParameters.id}`)
+      callback(null, Reply.success({
+        message: `Success`,
+        result: result.Attributes
+      }))
+    })
+    .catch(error => {
+      console.error(error)
+      if (error.statusCode === 400) {
+        callback(null, Reply.notFound({
+          message: 'Not found',
+          error
+        }))
+      } else {
+        callback(null, Reply.badImplementation({
+          message: 'Internal error',
+          error
+        }))
+      }
+      return
+    })
+}
+
+// Delete
+// --------------------------------------------------------
+module.exports.delete = (event, context, callback) => {
+  const params = {
+    TableName: process.env.TABLE_USERS,
+    Key: {
+      id: event.pathParameters.id
+    },
+    UpdateExpression: 'set deletedAt = :dt',
+    ExpressionAttributeValues: {
+      ':dt': new Date().toISOString()
+    },
+    ConditionExpression: [
+      'attribute_exists(id)'
+      // 'attribute_not_exists(deletedAt)'
+    ]
+    // ReturnValues: 'ALL_NEW'
+    // ReturnValues: 'UPDATED_NEW'
+  }
+
+  dynamoDb.update(params).promise()
+    .then(result => {
+      console.log(`Item deleted with id ${event.pathParameters.id}`)
+      callback(null, Reply.success({
+        message: `Success`
+      }))
+    })
+    .catch(error => {
+      console.error(error)
+      if (error.statusCode === 400) {
+        callback(null, Reply.notFound({
+          message: 'Not found',
+          error
+        }))
+      } else {
+        callback(null, Reply.badImplementation({
+          message: 'Internal error',
+          error
+        }))
+      }
+      return
+    })
 }
