@@ -31,6 +31,8 @@ const userInfo = (email) => {
   }
 }
 
+// Create
+// --------------------------------------------------------
 module.exports.create = (event, context, callback) => {
   const requestBody = JSON.parse(event.body)
   const email = requestBody.email
@@ -56,6 +58,51 @@ module.exports.create = (event, context, callback) => {
   })
 }
 
+// Get
+// --------------------------------------------------------
+module.exports.get = (event, context, callback) => {
+  const params = {
+    TableName: process.env.TABLE_USERS,
+    Key: {
+      id: event.pathParameters.id
+    }
+  }
+
+  dynamoDb.get(params).promise()
+    .then(result => {
+      callback(null, Reply.success(result.Item))
+    })
+    .catch(error => {
+      console.error(error)
+      callback(new Error('Couldn\'t fetch candidate.'))
+      return
+    })
+}
+
+// List
+// --------------------------------------------------------
+module.exports.list = (event, context, callback) => {
+  const params = {
+    TableName: process.env.TABLE_USERS,
+    ProjectionExpression: 'id, email'
+  }
+
+  console.log('Scanning Users Table.')
+  const onScan = (err, data) => {
+    if (err) {
+      console.log('Scan failed to load data. Error JSON:', JSON.stringify(err, null, 2))
+      callback(err)
+    } else {
+      console.log('Scan succeeded.')
+      return callback(null, Reply.success(data.Items))
+    }
+  }
+
+  dynamoDb.scan(params, onScan)
+}
+
+// Update
+// --------------------------------------------------------
 module.exports.update = (event, context, callback) => {
   const response = {
     statusCode: 200,
