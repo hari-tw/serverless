@@ -1,4 +1,4 @@
-'use strict';
+'use strict'
 
 module.exports.create = (event, context, callback) => {
   const response = {
@@ -10,11 +10,12 @@ module.exports.create = (event, context, callback) => {
     body: JSON.stringify({
       message: 'User Created!',
       input: event,
-    }),
-  };
+      environment: process.env
+    })
+  }
 
-  callback(null, response);
-};
+  callback(null, response)
+}
 
 module.exports.update = (event, context, callback) => {
   const response = {
@@ -26,8 +27,9 @@ module.exports.update = (event, context, callback) => {
     body: JSON.stringify({
       message: 'User Updated!',
       input: event,
-    }),
-  };
+      environment: process.env
+    })
+  }
 
-  callback(null, response);
-};
+  callback(null, response)
+}
