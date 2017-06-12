@@ -33,21 +33,21 @@ provider:
   versionFunctions: true
   stackTags: # Optional CF stack tags
     key: 'sless'
-  # stackPolicy:
-  #   - Effect: Allow
-  #     Principal: "*"
-  #     Action: "Update:*"
-  #     Resource: "*"
-  #   - Effect: Deny
-  #     Principal: "*"
-  #     Action:
-  #       - Update:Replace
-  #       - Update:Delete
-  #     Condition:
-  #       StringEquals:
-  #         ResourceType:
-  #           - AWS::DynamoDB::Table
-  iamRoleStatements: # permissions for all of your functions can be set here
+  stackPolicy:
+    - Effect: Allow
+      Principal: "*"
+      Action: "Update:*"
+      Resource: "*"
+    - Effect: Deny
+      Principal: "*"
+      Action:
+        - Update:Replace
+        - Update:Delete
+      Condition:
+        StringEquals:
+          ResourceType:
+            - AWS::DynamoDB::Table
+  iamRoleStatements: # Permissions for all of your functions can be set here
     # DynamoDB
     - Effect: Allow
       Action: # Gives permission to DynamoDB tables in a specific region
@@ -259,6 +259,12 @@ resources:
           #   Prefix: myprefix
   ## In order to print out the hosted domain via `serverless info` we need to define the DomainName output for CloudFormation
   Outputs:
+    # UsersTableArn:
+    #   Description: The ARN for the User's Table
+    #   Value:
+    #     "Fn::GetAtt": [ usersTable, Arn ]
+    #   Export:
+    #     Value: ${self:service}:${self:custom.stage}:UsersTableArn # see Fn::ImportValue to use in other services and http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html for documentation on use.
     WebAppCloudFrontDistributionOutput:
       Value:
         'Fn::GetAtt': [ WebAppCloudFrontDistribution, DomainName ]

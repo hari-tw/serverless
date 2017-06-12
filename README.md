@@ -76,3 +76,8 @@ If at any point, you no longer need your service, you can run the following comm
 serverless remove
 ```
 
+---
+
+#### References
+
+https://github.com/serverless/examples/tree/master/aws-node-single-page-app-via-cloudfront
