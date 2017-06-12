@@ -33,7 +33,7 @@ provider:
   versionFunctions: true
   stackTags: # Optional CF stack tags
     key: 'sless'
-  stackPolicy:
+  stackPolicy: # Optional CF stack policy. It allows updates to all resources except deleting/replacing DynamoDB Table (use with caution!)
     - Effect: Allow
       Principal: "*"
       Action: "Update:*"
@@ -92,6 +92,17 @@ functions:
       - http:
           method: patch
           path: "{anything}"
+
+  # Admin
+  # -------------------------------------------------------
+  admin:
+    handler: lambda/admin.handler
+    events:
+      - http:
+          path: admin
+          method: get
+          cors: true
+          # authorizer: ${self:custom.cognitoAuthorizer}
 
   # Auth
   # -------------------------------------------------------
