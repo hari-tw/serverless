@@ -3,23 +3,52 @@
 frameworkVersion: ">=1.15.1 <2.0.0"
 
 # The `service` block is the name of the service
-service: serverlabs
+service: "${self:provider.environment.SERVICE}"
+
+# Custom variables
+custom:
+  stage: "${opt:stage, self:provider.stage}"
+  profiles:
+    dev: development
+    prod: production
+  babelPresets:
+    - latest
+  # s3Bucket: ${self:provider.environment.S3_BUCKET_NAME}
+  cognitoPoolId: abc
+  # cognitoPoolId: ${cf:sless}
+  # cognitoPoolArn: "arn:aws:cognito-idp:${file(./env.yml):REGION}:${file(./env.yml):ACCOUNT_ID}:userpool/${file(./env.yml):COGNITO_POOL_ID}"
+  # cognitoAuthorizer:
+  #   arn: ${self:custom.cognitoPoolArn}
 
 # The `provider` block defines where your service will be deployed
 provider:
   name: aws
-  # SYSTEM_NAME: ${self:service}
-  environment: ${file(env.yml):${self:custom.stage}}
-  runtime: nodejs6.10
   stage: dev
+  runtime: nodejs6.10
+  environment: ${file(./env.yml):${self:custom.stage}}
   profile: ${self:custom.profiles.${self:custom.stage}}
-  region: us-west-2
-  timeout: 5
+  region: ${self:provider.environment.REGION}
+  timeout: 30
   memorySize: 128
   versionFunctions: true
   stackTags: # Optional CF stack tags
-    key: sless
+    key: 'sless'
+  # stackPolicy:
+  #   - Effect: Allow
+  #     Principal: "*"
+  #     Action: "Update:*"
+  #     Resource: "*"
+  #   - Effect: Deny
+  #     Principal: "*"
+  #     Action:
+  #       - Update:Replace
+  #       - Update:Delete
+  #     Condition:
+  #       StringEquals:
+  #         ResourceType:
+  #           - AWS::DynamoDB::Table
   iamRoleStatements: # permissions for all of your functions can be set here
+    # DynamoDB
     - Effect: Allow
       Action: # Gives permission to DynamoDB tables in a specific region
         - dynamodb:DescribeTable
@@ -31,13 +60,69 @@ provider:
         - dynamodb:DeleteItem
       Resource: "arn:aws:dynamodb:${self:provider.region}:*:*"
 
+    # S3 Bucket
+    # -  Effect: "Allow"
+    #     Action:
+    #       - "s3:ListBucket"
+    #     # You can put CloudFormation syntax in here.  No one will judge you.
+    #     # Remember, this all gets translated to CloudFormation.
+    #     Resource: { "Fn::Join" : ["", ["arn:aws:s3:::", { "Ref" : "ServerlessDeploymentBucket"} ] ] }
+    # -  Effect: "Allow"
+    #     Action:
+    #       - "s3:PutObject"
+    #     Resource:
+    #       Fn::Join:
+    #         - ""
+    #         - - "arn:aws:s3:::"
+    #           - "Ref" : "ServerlessDeploymentBucket"
+    #           - "/*"
+
 # The `Functions` you want to deploy
 functions:
+  public:
+    handler: lambda/public.public
+    events:
+      - http:
+          method: get
+          path: "/"
+      - http:
+          method: get
+          path: "how-it-wors"
+      - http:
+          method: get
+          path: "about"
+      - http:
+          method: get
+          path: "contact"
+      - schedule:
+          rate: rate(15 minutes)
+          enabled: ${self:provider.environment.WARMUP}
+      - http:
+          method: get
+          path: "{anything}"
+      - http:
+          method: post
+          path: "{anything}"
+      - http:
+          method: put
+          path: "{anything}"
+      - http:
+          method: patch
+          path: "{anything}"
+
+  # Auth
+  # -------------------------------------------------------
+  preSignUp:
+    handler: lambda/users.list
+    events:
+      - cognitoUserPool:
+          pool: "${self:service}Users"
+          trigger: PreSignUp
+
   # Users
   # -------------------------------------------------------
   usersCreate:
     handler: lambda/users.create
-    # The `events` block defines how to trigger the handler
     events:
       - http:
           path: users
@@ -98,11 +183,12 @@ functions:
 # The `Resources` your `Functions` use.  Raw AWS CloudFormation goes in here.
 resources:
   Resources:
+    # DynamoDB
     usersTable:
       Type: AWS::DynamoDB::Table
       DeletionPolicy: Retain
       Properties:
-        TableName: ${self:provider.environment.TABLE_USERS}
+        TableName: "${self:provider.environment.TABLE_USERS}"
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
@@ -113,21 +199,14 @@ resources:
           ReadCapacityUnits: 1
           WriteCapacityUnits: 1
 
-# Custom variables
-custom:
-  stage: "${opt:stage, self:provider.stage}"
-  profiles:
-    dev: development
-    prod: production
-  babelPresets:
-    - latest
-
 plugins:
   - serverless-babel-plugin
 
 package:
-  include:
-    - lib/**
   exclude:
+    - package.json
     - tmp/**
     - .git/**
+  include:
+    - lib/**
+    - node_modules

@@ -95,7 +95,11 @@ module.exports.list = (event, context, callback) => {
       callback(err)
     } else {
       console.log('Scan succeeded.')
-      return callback(null, Reply.success(data.Items))
+      // return callback(null, Reply.success(data.Items))
+      return callback(null, Reply.success({
+        a: 1,
+        b: JSON.stringify(process.env.COGNITO_POOL_ID)
+      }))
     }
   }
 
