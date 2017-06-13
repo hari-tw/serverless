@@ -7,7 +7,12 @@ custom:
   babelPresets:
     - env
   s3Bucket: ${self:provider.environment.S3_BUCKET}
-  cognitoPoolId: abc
+  # cognitoPoolId: ${self:service}IdentityPoolx1
+  cognitoPoolId:
+    Ref: CognitoIdentityPool
+  cognitoPoolArn: arn:aws:cognito-idp:${self:provider.environment.REGION}:${self:provider.environment.ACCOUNT_ID}:userpool/${self:custom.cognitoPoolId.Ref}
+  cognitoAuthorizer:
+    arn: ${self:custom.cognitoPoolArn}
 
 # The `provider` block defines where your service will be deployed
 provider:
@@ -30,39 +35,32 @@ provider:
       Resource: arn:aws:s3:::${self:custom.s3Bucket}/*
 
 functions:
-  public:
-    handler: lambda/public.public
+  # Admin
+  # -------------------------------------------------------
+  admin:
+    handler: lambda/admin.handler
+    events:
+      - http:
+          path: admin
+          method: get
+          cors: true
+          authorizer: ${self:custom.cognitoAuthorizer.arn}
 
 # The `Resources` your `Functions` use.  Raw AWS CloudFormation goes in here.
 resources:
   Resources:
-    ## S3 Bucket
-    WebAppS3Bucket:
-      Type: AWS::S3::Bucket
+    CognitoIdentityPool:
+      Type: AWS::Cognito::IdentityPool
       Properties:
-        BucketName: ${self:custom.s3Bucket}
-        # AccessControl: PublicRead
-        WebsiteConfiguration:
-          IndexDocument: index.html
-          ErrorDocument: index.html
-    ## S3 Bucket Policies to allow all files inside the Bucket to be avaialble to CloudFront
-    WebAppS3BucketPolicy:
-      Type: AWS::S3::BucketPolicy
-      Properties:
-        Bucket:
-          Ref: WebAppS3Bucket
-        PolicyDocument:
-          Statement:
-            - Sid: PublicReadGetObject
-              Effect: Allow
-              Principal: "*"
-              Action:
-                - s3:GetObject
-                # - s3:GetObjectAcl
-                # - s3:GetObjectVersion
-                # - s3:PutObject
-                # - s3:DeleteObject
-              Resource: arn:aws:s3:::${self:custom.s3Bucket}/*
+        IdentityPoolName: TheIdentityPool
+        AllowUnauthenticatedIdentities: true
+        # SupportedLoginProviders: 
+
+  Outputs:
+    IdentityPoolId:
+      Description: 'Cognito'
+      Value:
+        'Fn::GetAtt': [ CognitoIdentityPool, IdentityPoolId ]
 
 plugins:
   # - serverless-babel-plugin
