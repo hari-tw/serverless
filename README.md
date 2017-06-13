@@ -1,3 +1,20 @@
+# AWS Setup
+
+### IAM
+- Users > Create new > Name: `serverless` > Policy: `AdministratorAccess`
+
+Store your credentials at: `~/.aws/credentials`
+
+```
+[development]
+aws_access_key_id = ********
+aws_secret_access_key = ********
+```
+
+https://console.aws.amazon.com/iam/home#/security_credential
+
+---
+
 # Setup
 
 Replace the bucket name in `serverless.yaml` which you can find inside the custom section. This is due the fact that bucket names must be globally unique across all AWS S3 buckets.
@@ -11,7 +28,7 @@ npm install
 For a fresh install, use this:
 
 ```
-rm -rf node_modules && npm cache clean && npm install
+rm -rf node_modules && yarn cache clean && yarn install
 ```
 
 The serverless-single-page-app-plugin plugin in this example is there to simplify the experience using this example. It's not necessary to understand the plugin to deploy your Single Page Application.
@@ -81,3 +98,6 @@ serverless remove
 #### References
 
 https://github.com/serverless/examples/tree/master/aws-node-single-page-app-via-cloudfront
+
+DynamoDB
+https://github.com/awslabs/aws-serverless-crud-sample/blob/master/movies-dynamodb.js
