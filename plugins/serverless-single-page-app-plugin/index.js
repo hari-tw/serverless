@@ -22,6 +22,7 @@ class ServerlessPlugin {
     }
 
     this.hooks = {
+      'after:deploy:deploy': this.syncDirectory.bind(this),
       'syncToS3:sync': this.syncDirectory.bind(this),
       'domainInfo:domainInfo': this.domainInfo.bind(this)
     }

@@ -8,7 +8,7 @@ module.exports.handler = (event, context, callback) => {
   console.log('Admin.')
   const response = callback(null, Reply.success({
     admin: true,
-    cognitoPoolId: process.env.COGNITO_IDENTITY_POOL_ID
+    cognitoIdentityPoolId: process.env.COGNITO_IDENTITY_POOL_ID
   }))
 
   callback(null, response)

@@ -41,10 +41,22 @@ From non on, you can use `sls` to reference to the `serverless` command.
 
 # Deploy
 
+Give permission to execute the file `deploy.sh`:
+
+```
+chmod u+x deploy.sh
+```
+
+
+
 In order to deploy the Single Page Application you need to setup the infrastructure first by running
 
 ```
 SLS_DEBUG=* serverless deploy -v
+
+OR
+
+./deploy
 ```
 
 After this step your S3 bucket and CloudFront distribution is setup. Now you need to upload your static file e.g. `index.html` and `app.js` to S3. You can do this by running
@@ -112,3 +124,12 @@ http://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html
 
 AWS Cognito + Facebook Login JavaScript Example
 https://gist.github.com/brianberlin/443c3bd005ff63282394
+
+
+#### Read it later
+https://github.com/nfour/serverless-build-plugin
+https://www.npmjs.com/package/serverless-webpack
+https://github.com/laardee/serverless-authentication-boilerplate
+https://www.npmjs.com/package/serverless-aws-models
+https://www.npmjs.com/package/serverless-plugin-warmup
+https://github.com/laardee/serverless-authentication-boilerplate/blob/master/authentication/serverless.yml
