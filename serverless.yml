@@ -7,12 +7,9 @@ custom:
   babelPresets:
     - env
   s3Bucket: ${self:provider.environment.S3_BUCKET}
-  # cognitoPoolId: ${self:service}IdentityPoolx1
-  cognitoPoolId:
-    Ref: CognitoIdentityPool
-  cognitoPoolArn: arn:aws:cognito-idp:${self:provider.environment.REGION}:${self:provider.environment.ACCOUNT_ID}:userpool/${self:custom.cognitoPoolId.Ref}
-  cognitoAuthorizer:
-    arn: ${self:custom.cognitoPoolArn}
+  # cognitoIdentityPoolId:
+  #   Ref: CognitoIdentityPool
+  # cognitoIdentityPoolArn: arn:aws:cognito-identity:${self:provider.environment.REGION}:${self:provider.environment.ACCOUNT_ID}:identitypool/${self:custom.cognitoIdentityPoolId.Ref}
 
 # The `provider` block defines where your service will be deployed
 provider:
@@ -33,8 +30,20 @@ provider:
         - s3:PutObject
         - s3:DeleteObject
       Resource: arn:aws:s3:::${self:custom.s3Bucket}/*
+    # - Effect: Allow
+    #   Action:
+    #     - cognito-identity:*
+    #   Resource: ${self:custom.cognitoIdentityPoolArn}
 
 functions:
+  # Auth function in front of Cognito
+  # auth:
+  #   handler: auth.handler
+  #   memorySize: 128
+  #   authorizerSettings:
+  #     resultTtlInSeconds: 30
+  #     identityValidationExpression: .*
+
   # Admin
   # -------------------------------------------------------
   admin:
@@ -44,23 +53,33 @@ functions:
           path: admin
           method: get
           cors: true
-          authorizer: ${self:custom.cognitoAuthorizer.arn}
+          authorizer: aws_iam
+          # authorizer: ${self:custom.cognitoAuthorizer.arn}
 
 # The `Resources` your `Functions` use.  Raw AWS CloudFormation goes in here.
 resources:
   Resources:
-    CognitoIdentityPool:
-      Type: AWS::Cognito::IdentityPool
+    ## S3 Bucket
+    WebAppS3Bucket:
+      Type: AWS::S3::Bucket
       Properties:
-        IdentityPoolName: TheIdentityPool
-        AllowUnauthenticatedIdentities: true
-        # SupportedLoginProviders: 
+        BucketName: ${self:custom.s3Bucket}
+        # AccessControl: PublicRead
+        WebsiteConfiguration:
+          IndexDocument: index.html
+          ErrorDocument: index.html
+    # CognitoIdentityPool:
+    #   Type: AWS::Cognito::IdentityPool
+    #   Properties:
+    #     IdentityPoolName: TheIdentityPool
+    #     AllowUnauthenticatedIdentities: true
+    #     # SupportedLoginProviders:
 
-  Outputs:
-    IdentityPoolId:
-      Description: 'Cognito'
-      Value:
-        'Fn::GetAtt': [ CognitoIdentityPool, IdentityPoolId ]
+  # Outputs:
+  #   IdentityPoolId:
+  #     Description: 'Cognito'
+  #     Value:
+  #       'Fn::GetAtt': [ CognitoIdentityPool, IdentityPoolId ]
 
 plugins:
   # - serverless-babel-plugin

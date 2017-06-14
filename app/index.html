@@ -1,15 +1,99 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
-    <script src="app.js"></script>
+    <title>LAB Serverless</title>
+    <meta description="AWS Cognito + Facebook Login JavaScript Example">
+    <meta charset="UTF-8">
   </head>
-  <body>
-    <nav>
-      <ul>
-        <li><a href="/">Home</a></li>
-        <li><a href="/about">About</a></li>
-      </ul>
-    </nav>
-    <main></main>
-  </body>
+<body>
+  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1.41.min.js"></script>
+  <!--<script src="app.js"></script>-->
+
+  <script>
+    AWS.config.region = 'us-west-2';
+    var isAuthenticated = false;
+
+    (function(d, s, id) {
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) return;
+      js = d.createElement(s); js.id = id;
+      // js.src = "//connect.facebook.net/en_US/sdk.js";
+      js.src = "https://connect.facebook.net/en_US/sdk.js";
+      fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+
+    window.fbAsyncInit = function() {
+      FB.init({
+        appId      : '387706484915786',
+        cookie     : true,
+        xfbml      : true,
+        version    : 'v2.9'
+      });
+      // FB.getLoginStatus(statusChangeCallback);
+
+      FB.login(statusChangeCallback, {
+        scope: 'email',
+        return_scopes: true
+      });
+    };
+
+    function statusChangeCallback(response) {
+      console.log('statusChangeCallback', response);
+
+      if (response.status === 'connected' && response.authResponse) {
+        isAutenticated = true;
+
+        testAPI();
+
+        AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+          IdentityPoolId: 'us-west-2:0e491c0f-20c0-4020-9c2f-5776879db4ee',
+          Logins: { 'graph.facebook.com': response.authResponse.accessToken }
+        });
+
+        AWS.config.credentials.get(function(err) {
+          if (err) return console.log("Error", err);
+          console.log("Cognito Identity Id", AWS.config.credentials.identityId);
+        });
+
+        // Display the Logout button
+        document.getElementById('logout').innerHTML = 'Logout';
+      } else if (response.status === 'not_authorized') {
+        document.getElementById('status').innerHTML = 'Please log into this app.';
+      } else {
+        document.getElementById('status').innerHTML = 'Please log into Facebook.';
+      }
+    }
+
+    function testAPI() {
+      console.log('Welcome!  Fetching your information.... ');
+      FB.api('/me?fields=id,name,email', function(response) {
+        console.log('Successful login for: ' + response.name);
+        console.log(response);
+        document.getElementById('status').innerHTML = 'Thanks for logging in, ' + response.name + '!';
+      });
+    }
+
+    function logout() {
+      FB.logout(function(response) {
+        console.log('Loging out...', response);
+        location.reload();
+      });
+    }
+  </script>
+
+
+  <fb:login-button scope="public_profile,email" onlogin="FB.getLoginStatus(statusChangeCallback);"></fb:login-button>
+
+  <div id="status"></div>
+
+  <div id="logout" onclick="logout();"></div>
+
+  <nav>
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/about">About</a></li>
+    </ul>
+  </nav>
+
+</body>
 </html>

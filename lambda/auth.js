@@ -2,12 +2,12 @@
 
 const Reply = require('../lib/reply.js')
 
-// Admin
+// Auth
 // --------------------------------------------------------
 module.exports.handler = (event, context, callback) => {
   console.log('Admin.')
   const response = callback(null, Reply.success({
-    admin: true,
+    handler: 'auth',
     cognitoPoolId: process.env.COGNITO_IDENTITY_POOL_ID
   }))
 

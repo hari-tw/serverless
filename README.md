@@ -101,3 +101,14 @@ https://github.com/serverless/examples/tree/master/aws-node-single-page-app-via-
 
 DynamoDB
 https://github.com/awslabs/aws-serverless-crud-sample/blob/master/movies-dynamodb.js
+
+
+AWS Cognito ARN
+http://docs.aws.amazon.com/cognito/latest/developerguide/resource-permissions.html
+
+AWS ARN's
+http://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html
+
+
+AWS Cognito + Facebook Login JavaScript Example
+https://gist.github.com/brianberlin/443c3bd005ff63282394
