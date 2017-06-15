@@ -312,7 +312,7 @@ resources:
       Type: AWS::Cognito::IdentityPool
       Properties:
         IdentityPoolName: "${self:provider.environment.COGNITO_IDENTITY_POOL}"
-        AllowUnauthenticatedIdentities: true
+        AllowUnauthenticatedIdentities: false
         # SupportedLoginProviders:
 
     ## Role
