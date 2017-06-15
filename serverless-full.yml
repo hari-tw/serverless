@@ -97,6 +97,7 @@ functions:
           method: get
           cors: true
           authorizer: aws_iam
+    # warmup: true
 
   # Users
   # -------------------------------------------------------
@@ -212,17 +213,12 @@ resources:
         GroupDescription: SecurityGroup for Serverless Functions
         VpcId:
           Ref: ServerlessVPC
-
-    ## Cognito
-    CognitoIdentityPool:
-      Type: AWS::Cognito::IdentityPool
-      Properties:
-        IdentityPoolName: "${self:provider.environment.COGNITO_IDENTITY_POOL}"
-        AllowUnauthenticatedIdentities: true
-        # SupportedLoginProviders:
+        Tags:
+        - Key: Name
+          Value: "${self:service}-${self:provider.stage}-serverless"
 
     ## DynamoDB
-    usersTable:
+    UsersDynamoDBTable:
       Type: AWS::DynamoDB::Table
       DeletionPolicy: Retain
       Properties:
@@ -311,6 +307,14 @@ resources:
           #   Bucket: ${sef:service}-logs.s3.amazonaws.com
           #   Prefix: ${sef:service}
 
+    ## Cognito
+    CognitoIdentityPool:
+      Type: AWS::Cognito::IdentityPool
+      Properties:
+        IdentityPoolName: "${self:provider.environment.COGNITO_IDENTITY_POOL}"
+        AllowUnauthenticatedIdentities: true
+        # SupportedLoginProviders:
+
     ## Role
     GlobalRole:
       Type: AWS::IAM::Role
@@ -375,6 +379,7 @@ resources:
                     - iam:CreateRole
                     - iam:PutRolePolicy
                     - sts:AssumeRole
+                    - lambda:InvokeFunction
                   Resource: "*"
 
   ## In order to print out the hosted domain via `serverless info` we need to define the DomainName output for CloudFormation

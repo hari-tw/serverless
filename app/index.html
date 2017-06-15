@@ -46,21 +46,25 @@
         testAPI();
 
         AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-          IdentityPoolId: 'us-west-2:23488d1e-60ce-4790-b024-f2e096de2193',
+          IdentityPoolId: 'us-west-2:fa5e7533-99f3-47da-820c-241cf59820ad',
           Logins: { 'graph.facebook.com': response.authResponse.accessToken }
         });
 
         AWS.config.credentials.clearCachedId();
 
-        AWS.config.credentials.refresh(function(resp){
-          console.log('Refreshing...', resp);
-
-          AWS.config.credentials.get(function(err) {
-            if (err) return console.log("Error", err);
-            console.log("Cognito Identity Id", AWS.config.credentials.identityId);
-
-          });
+        AWS.config.credentials.get(function(err) {
+          if (err) return console.log("Error", err);
+          console.log("Cognito Identity Id", AWS.config.credentials.identityId);
         });
+
+        // AWS.config.credentials.refresh(function(resp){
+        //   console.log('Refreshing...', resp);
+
+        //   AWS.config.credentials.get(function(err) {
+        //     if (err) return console.log("Error", err);
+        //     console.log("Cognito Identity Id", AWS.config.credentials.identityId);
+        //   });
+        // });
 
         // Display the Logout button
         document.getElementById('logout').innerHTML = 'Logout';

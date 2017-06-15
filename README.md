@@ -141,11 +141,15 @@ https://gist.github.com/brianberlin/443c3bd005ff63282394
 
 
 #### Read it later
+https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/specifying-conditions.html
+
+https://www.npmjs.com/package/serverless-plugin-warmup
 https://github.com/nfour/serverless-build-plugin
 https://www.npmjs.com/package/serverless-webpack
+
 https://github.com/laardee/serverless-authentication-boilerplate
 https://www.npmjs.com/package/serverless-aws-models
-https://www.npmjs.com/package/serverless-plugin-warmup
+
 https://github.com/laardee/serverless-authentication-boilerplate/blob/master/authentication/serverless.yml
 
 https://dzone.com/articles/building-serverless-apps-with-aws-lambda
