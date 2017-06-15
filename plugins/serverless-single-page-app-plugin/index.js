@@ -30,8 +30,8 @@ class ServerlessPlugin {
 
   // syncs the `app` directory to the provided bucket
   syncDirectory () {
-    this.options.profile = this.options.profile || this.serverless.variables.service.provider.environment.PROFILE
-    this.options.region = this.options.region || this.serverless.variables.service.provider.environment.REGION
+    this.options.profile = this.options.profile || this.serverless.variables.service.provider.profile
+    this.options.region = this.options.region || this.serverless.variables.service.provider.region
 
     const s3Bucket = this.serverless.variables.service.custom.s3Bucket
     const args = [

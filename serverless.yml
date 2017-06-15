@@ -1,4 +1,9 @@
-frameworkVersion: ">=1.15.1 <2.0.0"
+# ********************************************
+# LIGHT VERSION
+# CognitoIdentityPool
+# ********************************************
+
+frameworkVersion: ">=1.15.3 <2.0.0"
 service: "${self:provider.environment.SERVICE}"
 
 # Custom variables
@@ -11,6 +16,7 @@ custom:
     Ref: CognitoIdentityPool
 
 # The `provider` block defines where your service will be deployed
+# ===================================================================
 provider:
   name: aws
   stage: dev
@@ -21,84 +27,18 @@ provider:
   timeout: 30
   memorySize: 128
   versionFunctions: true
-  stackTags: # Optional CF stack tags
-    key: 'sless'
-  stackPolicy: # Optional CF stack policy. It allows updates to all resources except deleting/replacing DynamoDB Table (use with caution!)
-    - Effect: Allow
-      Principal: "*"
-      Action: "Update:*"
-      Resource: "*"
-    - Effect: Deny
-      Principal: "*"
-      Action:
-        - Update:Replace
-        - Update:Delete
-      Condition:
-        StringEquals:
-          ResourceType:
-            - AWS::DynamoDB::Table
-
-  iamRoleStatements: # Permissions for all of your functions can be set here
-    # DynamoDB
-    - Effect: Allow
-      Action: # Gives permission to DynamoDB tables in a specific region
-        - dynamodb:DescribeTable
-        - dynamodb:Query
-        - dynamodb:Scan
-        - dynamodb:GetItem
-        - dynamodb:PutItem
-        - dynamodb:UpdateItem
-        - dynamodb:DeleteItem
-      Resource: "arn:aws:dynamodb:${self:provider.region}:*:*"
-
-    # S3
-    - Effect: Allow
-      Action:
-        - s3:GetObject
-        - s3:GetObjectVersion
-        - s3:PutObject
-        - s3:DeleteObject
-      Resource: arn:aws:s3:::${self:custom.s3Bucket}/*
-
-    # Cognito
-    - Effect: Allow
-      Action:
-        - cognito-identity:*
-      Resource: arn:aws:cognito-identity:${self:provider.environment.REGION}:${self:provider.environment.ACCOUNT_ID}:identitypool/*
+  role: GlobalRole
+  vpc:
+    securityGroupIds:
+      - "Fn::GetAtt": ServerlessSecurityGroup.GroupId
+    subnetIds:
+      - Ref: ServerlessSubnetA
+      - Ref: ServerlessSubnetB
+      - Ref: ServerlessSubnetC
 
 # The `Functions` you want to deploy
+# ===================================================================
 functions:
-  public:
-    handler: lambda/public.public
-    events:
-      - http:
-          method: get
-          path: "/"
-      - http:
-          method: get
-          path: "how-it-works"
-      - http:
-          method: get
-          path: "about"
-      - http:
-          method: get
-          path: "contact"
-      - schedule:
-          rate: rate(15 minutes)
-          enabled: ${self:provider.environment.WARMUP}
-      - http:
-          method: get
-          path: "{anything}"
-      - http:
-          method: post
-          path: "{anything}"
-      - http:
-          method: put
-          path: "{anything}"
-      - http:
-          method: patch
-          path: "{anything}"
-
   # Admin
   # -------------------------------------------------------
   admin:
@@ -110,69 +50,9 @@ functions:
           cors: true
           authorizer: aws_iam
 
-  # Users
-  # -------------------------------------------------------
-  usersCreate:
-    handler: lambda/users.create
-    events:
-      - http:
-          path: users
-          method: post
-          cors: true
-    tags:
-      stage: ${self:custom.stage}
-      resource: users
-
-  usersGet:
-    handler: lambda/users.get
-    timeout: 10
-    events:
-      - http:
-          path: users/{id}
-          method: get
-          cors: true
-    tags:
-      stage: ${self:custom.stage}
-      resource: users
-
-  usersUpdate:
-    handler: lambda/users.update
-    timeout: 10
-    events:
-      - http:
-          path: users/{id}
-          method: put
-          cors: true
-    tags:
-      stage: ${self:custom.stage}
-      resource: users
-
-  usersDelete:
-    handler: lambda/users.delete
-    timeout: 10
-    events:
-      - http:
-          path: users/{id}
-          method: delete
-          cors: true
-    tags:
-      stage: ${self:custom.stage}
-      resource: users
-
-  usersList:
-    handler: lambda/users.list
-    timeout: 10
-    events:
-      - http:
-          path: users
-          method: get
-          cors: true
-    tags:
-      stage: ${self:custom.stage}
-      resource: users
-
 # The `Resources` your `Functions` use.  Raw AWS CloudFormation goes in here.
 resources:
+  Description: ${self:service} [${self:provider.environment.STAGE}] template
   Resources:
     # Cognito
     CognitoIdentityPool:
@@ -181,108 +61,134 @@ resources:
         IdentityPoolName: "${self:provider.environment.COGNITO_IDENTITY_POOL}"
         AllowUnauthenticatedIdentities: true
         # SupportedLoginProviders:
-    # DynamoDB
-    usersTable:
-      Type: AWS::DynamoDB::Table
-      DeletionPolicy: Retain
+
+    # CognitoIdentityPoolRoles:
+    #   Type: "AWS::Cognito::IdentityPoolRoleAttachment"
+    #   Properties:
+    #     IdentityPoolId:
+    #       Ref: CognitoIdentityPool
+    #     RoleMappings:
+    #       String to RoleMapping object map
+    #     # Roles:
+    #     #   - authenticated: String
+    #     #   - unauthenticated: String
+
+    # VPC
+    ServerlessVPC:
+      Type: AWS::EC2::VPC
       Properties:
-        TableName: "${self:provider.environment.TABLE_USERS}"
-        AttributeDefinitions:
-          - AttributeName: id
-            AttributeType: S
-        KeySchema:
-          - AttributeName: id
-            KeyType: HASH
-        ProvisionedThroughput:
-          ReadCapacityUnits: 1
-          WriteCapacityUnits: 1
-    ## S3 Bucket
-    WebAppS3Bucket:
-      Type: AWS::S3::Bucket
+        CidrBlock: "10.0.0.0/16"
+        Tags:
+        - Key: Name
+          Value: "${self:service}-${self:provider.stage}"
+    ServerlessSubnetA:
+      DependsOn: ServerlessVPC
+      Type: AWS::EC2::Subnet
       Properties:
-        BucketName: ${self:custom.s3Bucket}
-        WebsiteConfiguration:
-          IndexDocument: index.html
-          ErrorDocument: index.html
-    ## S3 Bucket Policies to allow all files inside the Bucket to be avaialble to CloudFront
-    WebAppS3BucketPolicy:
-      Type: AWS::S3::BucketPolicy
+        VpcId:
+          Ref: ServerlessVPC
+        AvailabilityZone: ${self:provider.region}a
+        CidrBlock: "10.0.0.0/24"
+        Tags:
+        - Key: Name
+          Value: "${self:service}-${self:provider.stage}-a"
+    ServerlessSubnetB:
+      DependsOn: ServerlessVPC
+      Type: AWS::EC2::Subnet
       Properties:
-        Bucket:
-          Ref: WebAppS3Bucket
-        PolicyDocument:
+        VpcId:
+          Ref: ServerlessVPC
+        AvailabilityZone: ${self:provider.region}b
+        CidrBlock: "10.0.1.0/24"
+        Tags:
+        - Key: Name
+          Value: "${self:service}-${self:provider.stage}-b"
+    ServerlessSubnetC:
+      DependsOn: ServerlessVPC
+      Type: AWS::EC2::Subnet
+      Properties:
+        VpcId:
+          Ref: ServerlessVPC
+        AvailabilityZone: ${self:provider.region}c
+        CidrBlock: "10.0.2.0/24"
+        Tags:
+        - Key: Name
+          Value: "${self:service}-${self:provider.stage}-c"
+    ServerlessSecurityGroup:
+      DependsOn: ServerlessVPC
+      Type: AWS::EC2::SecurityGroup
+      Properties:
+        GroupDescription: SecurityGroup for Serverless Functions
+        VpcId:
+          Ref: ServerlessVPC
+
+    # Role
+    GlobalRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: "${self:service}-lambda-role"
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
           Statement:
-            - Sid: PublicReadGetObject
-              Effect: Allow
-              Principal: "*"
-              Action:
-              - s3:GetObject
-              Resource: arn:aws:s3:::${self:custom.s3Bucket}/*
-    ## CloudFront Distribution to serve the Web Application
-    WebAppCloudFrontDistribution:
-      Type: AWS::CloudFront::Distribution
-      Properties:
-        DistributionConfig:
-          Origins:
-            - DomainName: ${self:custom.s3Bucket}.s3.amazonaws.com
-              ## An identifier for the origin which must be unique within the distribution
-              Id: WebApp
-              CustomOriginConfig:
-                HTTPPort: 80
-                HTTPSPort: 443
-                OriginProtocolPolicy: https-only
-              ## In case you want to restrict the bucket access use S3OriginConfig and remove CustomOriginConfig
-              # S3OriginConfig:
-              #   OriginAccessIdentity: origin-access-identity/cloudfront/E127EXAMPLE51Z
-          Enabled: 'true'
-          ## Uncomment the following section in case you are using a custom domain
-          # Aliases:
-          # - mysite.example.com
-          DefaultRootObject: index.html
-          ## Since the Single Page App is taking care of the routing we need to make sure ever path is served with index.html
-          ## The only exception are files that actually exist e.h. app.js, style.css
-          CustomErrorResponses:
-            - ErrorCode: 404
-              ResponseCode: 200
-              ResponsePagePath: /index.html
-          DefaultCacheBehavior:
-            AllowedMethods:
-              - DELETE
-              - GET
-              - HEAD
-              - OPTIONS
-              - PATCH
-              - POST
-              - PUT
-            ## The origin id defined above
-            TargetOriginId: WebApp
-            ## Defining if and how the QueryString and Cookies are forwarded to the origin which in this case is S3
-            ForwardedValues:
-              QueryString: 'false'
-              Cookies:
-                Forward: none
-            ## The protocol that users can use to access the files in the origin. To allow HTTP use `allow-all`
-            ViewerProtocolPolicy: redirect-to-https
-          ## The certificate to use when viewers use HTTPS to request objects.
-          ViewerCertificate:
-            CloudFrontDefaultCertificate: 'true'
-          ## Uncomment the following section in case you want to enable logging for CloudFront requests
-          # Logging:
-          #   IncludeCookies: 'false'
-          #   Bucket: mylogs.s3.amazonaws.com
-          #   Prefix: myprefix
-  ## In order to print out the hosted domain via `serverless info` we need to define the DomainName output for CloudFormation
+            - Effect: Allow
+              Principal:
+                Service:
+                  - lambda.amazonaws.com
+              Action: sts:AssumeRole
+        ManagedPolicyArns:
+          - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
+        Policies:
+          - PolicyName: "${self:service}-lambda-policy"
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                # Logs
+                - Effect: Allow
+                  Action:
+                    - logs:CreateLogGroup
+                    - logs:CreateLogStream
+                    - logs:PutLogEvents
+                  Resource: arn:aws:logs:${self:provider.region}:${self:provider.environment.ACCOUNT_ID}:log-group:/aws/lambda/*:*:*
+                # S3
+                - Effect: Allow
+                  Action:
+                    - s3:GetObject
+                    - s3:GetObjectVersion
+                    - s3:PutObject
+                    - s3:DeleteObject
+                  Resource:
+                    - arn:aws:s3:::${self:custom.s3Bucket}/*
+                # Cognito
+                - Effect: Allow
+                  Action:
+                    - cognito-identity:*
+                    - cognito-idp:*
+                  Resource: arn:aws:cognito-identity:${self:provider.region}:${self:provider.environment.ACCOUNT_ID}:identitypool/*
+                # DynamoDB
+                - Effect: Allow
+                  Action:
+                    - dynamodb:DescribeTable
+                    - dynamodb:Query
+                    - dynamodb:Scan
+                    - dynamodb:GetItem
+                    - dynamodb:PutItem
+                    - dynamodb:UpdateItem
+                    - dynamodb:DeleteItem
+                  Resource: arn:aws:dynamodb:${self:provider.region}:*:*
+                # Others
+                - Effect: Allow
+                  Action:
+                    - ec2:CreateNetworkInterface
+                    - ec2:DescribeNetworkInterfaces
+                    - ec2:DetachNetworkInterface
+                    - ec2:DeleteNetworkInterface
+                    - ses:SendEmail
+                    - iam:CreateRole
+                    - iam:PutRolePolicy
+                    - sts:AssumeRole
+                  Resource: "*"
+
   Outputs:
-    # UsersTableArn:
-    #   Description: The ARN for the User's Table
-    #   Value:
-    #     "Fn::GetAtt": [ usersTable, Arn ]
-    #   Export:
-    #     Value: ${self:service}:${self:custom.stage}:UsersTableArn # see Fn::ImportValue to use in other services and http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html for documentation on use.
-    WebAppCloudFrontDistributionOutput:
-      Description: 'CloudFront Uri'
-      Value:
-        'Fn::GetAtt': [ WebAppCloudFrontDistribution, DomainName ]
     CognitoIdentityPoolId:
       Description: 'Cognito'
       Value:
@@ -296,8 +202,8 @@ plugins:
 package:
   exclude:
     - package.json
-    - tmp/**
-    - .git/**
+    - tmp
+    - .git
   include:
-    - lib/**
+    - lib
     - node_modules

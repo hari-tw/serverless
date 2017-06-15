@@ -46,17 +46,25 @@
         testAPI();
 
         AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-          IdentityPoolId: 'us-west-2:0e491c0f-20c0-4020-9c2f-5776879db4ee',
+          IdentityPoolId: 'us-west-2:23488d1e-60ce-4790-b024-f2e096de2193',
           Logins: { 'graph.facebook.com': response.authResponse.accessToken }
         });
 
-        AWS.config.credentials.get(function(err) {
-          if (err) return console.log("Error", err);
-          console.log("Cognito Identity Id", AWS.config.credentials.identityId);
+        AWS.config.credentials.clearCachedId();
+
+        AWS.config.credentials.refresh(function(resp){
+          console.log('Refreshing...', resp);
+
+          AWS.config.credentials.get(function(err) {
+            if (err) return console.log("Error", err);
+            console.log("Cognito Identity Id", AWS.config.credentials.identityId);
+
+          });
         });
 
         // Display the Logout button
         document.getElementById('logout').innerHTML = 'Logout';
+
       } else if (response.status === 'not_authorized') {
         document.getElementById('status').innerHTML = 'Please log into this app.';
       } else {
@@ -76,9 +84,16 @@
     function logout() {
       FB.logout(function(response) {
         console.log('Loging out...', response);
+        // We'll clean out the localStorage
+        // The Cognito service sets various items here, so we'll make sure to empty out everything to log a user out.
+        localStorage.clear();
         location.reload();
+        // window.location = '/';
       });
     }
+
+    var user = localStorage.getItem('token');
+    console.log('user >> '+ user);
   </script>
 
 

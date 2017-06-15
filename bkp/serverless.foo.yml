@@ -24,30 +24,61 @@ provider:
   profile: ${self:provider.environment.PROFILE}
   timeout: 30
   memorySize: 128
+  # vpc:
+  #   securityGroupIds:
+  #     - "Fn::GetAtt": ServerlessSecurityGroup.GroupId
+  #   subnetIds:
+  #     - Ref: ServerlessSubnetA
+  #     - Ref: ServerlessSubnetB
+  #     - Ref: ServerlessSubnetC
 
   iamRoleStatements: # Permissions for all of your functions can be set here
-    # - Effect: Allow
-    #   Action:
-    #     - s3:GetObject
-    #     - s3:GetObjectVersion
-    #     - s3:PutObject
-    #     - s3:DeleteObject
-    #   Resource: arn:aws:s3:::${self:custom.s3Bucket}/*
+    # Logs
+    - Effect: Allow
+      Action:
+        - logs:CreateLogGroup
+        - logs:CreateLogStream
+        - logs:PutLogEvents
+      Resource: arn:aws:logs:${self:provider.region}:${self:provider.environment.ACCOUNT_ID}:log-group:/aws/lambda/*:*:*
+    # S3
+    - Effect: Allow
+      Action:
+        - s3:GetObject
+        - s3:GetObjectVersion
+        - s3:PutObject
+        - s3:DeleteObject
+      Resource: arn:aws:s3:::${self:custom.s3Bucket}/*
+
+    # Cognito
     - Effect: Allow
       Action:
         - cognito-identity:*
-      # Resource:
-      #   Fn::Join:
-      #     - ''
-      #     - - 'arn:aws:cognito-identity:'
-      #       - ${self:provider.environment.REGION}:${self:provider.environment.ACCOUNT_ID}:identitypool/
-      #       - Ref: CognitoIdentityPool
-      #       - ${self:service}:${self:provider.environment.STAGE}:CognitoIdentityPoolId
-      # Resource: arn:aws:cognito-identity:${self:provider.environment.REGION}:${self:provider.environment.ACCOUNT_ID}:identitypool/${self:custom.cognitoIdentityPoolId.IdentityPoolId}
-      # Resource: ${self:custom.cognitoIdentityPoolArn}
-      Resource: arn:aws:cognito-identity:${self:provider.environment.REGION}:${self:provider.environment.ACCOUNT_ID}:identitypool/*
+      Resource: arn:aws:cognito-identity:${self:provider.region}:${self:provider.environment.ACCOUNT_ID}:identitypool/*
+
+    # DynamoDB
+    - Effect: Allow
+      Action:
+        - dynamodb:DescribeTable
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${self:provider.region}:*:*"
 
 functions:
+  # UPLOAD
+  # -------------------------------------------------------
+  iconUpload:
+    handler: iconUpload.upload
+    events:
+      - s3:
+          bucket: ${self:custom.s3Bucket}
+          event: s3:ObjectCreated:Put
+          rules:
+            - prefix: uploads/
+            - suffix: .png
   # Admin
   # -------------------------------------------------------
   admin:
@@ -93,8 +124,8 @@ plugins:
 package:
   exclude:
     - package.json
-    - tmp/**
-    - .git/**
+    - tmp
+    - .git
   include:
-    - lib/**
+    - lib
     - node_modules

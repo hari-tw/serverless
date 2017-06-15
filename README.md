@@ -1,17 +1,20 @@
 # AWS Setup
 
 ### IAM
+
+- Dashboard > Security Status > Setup all listed items
 - Users > Create new > Name: `serverless` > Policy: `AdministratorAccess`
 
-Store your credentials at: `~/.aws/credentials`
+---
+Copy your credentials from:
+https://console.aws.amazon.com/iam/home#/security_credential
 
+Store your credentials at: `~/.aws/credentials`
 ```
 [development]
 aws_access_key_id = ********
 aws_secret_access_key = ********
 ```
-
-https://console.aws.amazon.com/iam/home#/security_credential
 
 ---
 
@@ -106,6 +109,17 @@ serverless remove
 ```
 
 ---
+### Notes
+
+```
+To use a federated identity, you set the API Gateway method to use “AWS_IAM” authorization. You use Cognito to create a role and associate it with your Cognito identity pool. You then use the Identity and Access Management (IAM) service to grant this role permission to call your API Gateway method.
+```
+
+The IAM credentials can then be used to sign the request to API Gateway via the API Gateways SDK generated earlier. NOTE: The session token also needs to be passed in via the x-amz-security-token header and the API key as x-api-key.
+
+Finally, signing out is called on the user to end the session for the client app. There is also a globalSignOut function which will invalidated all the current tokens, effectively signing out of all client apps.
+
+---
 
 #### References
 
@@ -133,3 +147,24 @@ https://github.com/laardee/serverless-authentication-boilerplate
 https://www.npmjs.com/package/serverless-aws-models
 https://www.npmjs.com/package/serverless-plugin-warmup
 https://github.com/laardee/serverless-authentication-boilerplate/blob/master/authentication/serverless.yml
+
+https://dzone.com/articles/building-serverless-apps-with-aws-lambda
+https://github.com/serverless/examples/tree/master/aws-node-auth0-custom-authorizers-api
+
+https://github.com/awslabs/aws-cognito-apigw-angular-auth/blob/master/sam/sam.yaml
+
+https://github.com/keboola/developer-portal/blob/master/serverless.yml
+
+https://github.com/chnbohwr/serverless_nodejs_rds/blob/master/serverless.yml
+
+---
+
+### ERRORS
+Some errors are well known and here is the workaround:
+
+```
+The specified bucket does not exist
+```
+Login to `console.aws.amazon.com/cloudformation` and manually delete the *Stack* before a fresh deploy.
+
+---
