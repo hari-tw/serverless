@@ -1,3 +1,12 @@
+# Facebook setup
+https://developers.facebook.com/apps/387706484915786/settings/
+
+
+### List of headers to enable on API Gateway
+Default: 
+'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,
+Access-Control-Allow-Origin,Origin,Content-Range,Content-Description,Content-Disposition,x-requested-with,X-ACCESS_TOKEN'
+
 # AWS Setup
 
 ### IAM
@@ -139,6 +148,11 @@ http://docs.aws.amazon.com/general/latest/gr/aws-arns-and-namespaces.html
 AWS Cognito + Facebook Login JavaScript Example
 https://gist.github.com/brianberlin/443c3bd005ff63282394
 
+Set Cognito Identity Roles Syntax
+http://docs.aws.amazon.com/cognitoidentity/latest/APIReference/API_SetIdentityPoolRoles.html
+
+CORS errors
+https://forums.aws.amazon.com/thread.jspa?threadID=213844
 
 #### Read it later
 https://docs.aws.amazon.com/amazondynamodb/latest/developerguide/specifying-conditions.html

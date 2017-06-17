@@ -14,6 +14,10 @@
   },
   "main": "",
   "license": "MIT",
+  "scripts": {
+    "static": "node server",
+    "expose": "./ngrok http 9000"
+  },
   "dependencies": {
     "bluebird": "3.5.0",
     "serverless-plugin-stack-outputs": "^1.3.4",

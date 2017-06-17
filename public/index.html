@@ -1,11 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
   <head>
-    <title>LAB Serverless</title>
+    <title>LAB Home</title>
     <meta description="AWS Cognito + Facebook Login JavaScript Example">
     <meta charset="UTF-8">
+    <script src="lab.js"></script>
+
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/axios/dist/axios.standalone.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/CryptoJS/rollups/hmac-sha256.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/CryptoJS/rollups/sha256.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/CryptoJS/components/hmac.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/CryptoJS/components/enc-base64.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/url-template/url-template.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/apiGatewayCore/sigV4Client.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/apiGatewayCore/apiGatewayClient.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/apiGatewayCore/simpleHttpClient.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/apiGatewayCore/utils.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/apigClient.js"></script>
   </head>
 <body>
+
   <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1.41.min.js"></script>
   <!--<script src="app.js"></script>-->
 
@@ -36,7 +50,7 @@
         return_scopes: true
       });
     };
-
+    var _resp;
     function statusChangeCallback(response) {
       console.log('statusChangeCallback', response);
 
@@ -46,7 +60,7 @@
         testAPI();
 
         AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-          IdentityPoolId: 'us-west-2:7f84a820-cb71-4b32-b9df-3fea9b88071d',
+          IdentityPoolId: 'us-west-2:0a43d8df-ba2e-469d-abd9-bc8db1e2e3d8',
           Logins: { 'graph.facebook.com': response.authResponse.accessToken },
 
           // optional name, defaults to web-identity
@@ -59,6 +73,16 @@
         AWS.config.credentials.get(function(err) {
           if (err) return console.log("Error", err);
           console.log("Cognito Identity Id", AWS.config.credentials.identityId);
+
+          var credentials = {
+            identityId: AWS.config.credentials.identityId,
+            accessKey: AWS.config.credentials.accessKeyId,
+            secretKey: AWS.config.credentials.secretAccessKey,
+            sessionToken: AWS.config.credentials.sessionToken
+          };
+
+          // Store credentials in local storage
+          saveCredentials(credentials);
         });
 
         // AWS.config.credentials.refresh(function(resp){
@@ -90,17 +114,60 @@
     }
 
     function testApiGateway() {
-      var apigClient = apigClientFactory.newClient({
-          accessKey: 'ACCESS_KEY',
-          secretKey: 'SECRET_KEY',
-          sessionToken: 'SESSION_TOKEN', //OPTIONAL: If you are using temporary credentials you must include the session token
-          region: 'us-west-2' // OPTIONAL: The region where the API is deployed, by default this parameter is set to us-east-1
-          systemClockOffset: 0 // OPTIONAL: An offset value in milliseconds to apply to signing time
+      var credentials = JSON.parse(getCredentials());
+      var options = {
+          accessKey: credentials.accessKey,
+          secretKey: credentials.secretKey,
+          sessionToken: credentials.sessionToken, //OPTIONAL: If you are using temporary credentials you must include the session token
+          region: 'us-west-2',
+          systemClockOffset: 0, // OPTIONAL: An offset value in milliseconds to apply to signing time
           retries: 2, // OPTIONAL: Number of times to retry before failing. Uses axon-retry plugin.
           retryCondition: (err) => { // OPTIONAL: Callback to further control if request should be retried.  Uses axon-retry plugin.
             return err.response.status === 500;
           }
+      };
+
+      var apigClient = apigClientFactory.newClient(options);
+      var params = null
+      var body = null
+      var additionalParams = {
+        headers: {
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
+      };
+
+      apigClient.adminGet(params, body, additionalParams)
+      .then(function(result) {
+        // Add success callback code here.
+        console.log(result)
+      }).catch( function(result) {
+        // Add error callback code here.
+        console.log(result)
       });
+    }
+
+    /**
+     * @param credentials {identityId, accessKey, secretKey, accessToken}
+     */
+    function saveCredentials(credentials) {
+      // Put the object into storage
+      console.log('Saving credentials to local storage');
+      console.log(JSON.stringify(credentials));
+      localStorage.setItem('credentials', JSON.stringify(credentials));
+    }
+
+    function getCredentials() {
+      // Retrieve the object from storage
+      return localStorage.getItem('credentials');
+    }
+
+    function saveUser(user) {
+      localStorage.setItem('user', JSON.stringify(user));
+    }
+
+    function getUser() {
+      return localStorage.getItem('user');
     }
 
     function logout() {
@@ -124,6 +191,10 @@
   <div id="status"></div>
 
   <div id="logout" onclick="logout();"></div>
+
+  <br><br>
+  <button onclick="testApiGateway();">TEST API GATEWAY</button>
+  <br><br><br>
 
   <nav>
     <ul>

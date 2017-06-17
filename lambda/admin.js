@@ -13,10 +13,8 @@ module.exports.handler = (event, context, callback) => {
     return callback(null, 'Lambda is warm!')
   }
 
-  const response = callback(null, Reply.success({
+  callback(null, Reply.success({
     admin: true,
     cognitoIdentityPoolId: process.env.COGNITO_IDENTITY_POOL_ID
   }))
-
-  callback(null, response)
 }

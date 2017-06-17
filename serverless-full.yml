@@ -130,7 +130,7 @@ functions:
     events:
       - http:
           path: users/{id}
-          method: put
+          method: post
           cors: true
     tags:
       stage: ${self:custom.stage}
