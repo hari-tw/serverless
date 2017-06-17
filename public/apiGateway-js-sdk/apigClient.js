@@ -41,7 +41,7 @@ apigClientFactory.newClient = function (config) {
     config.defaultAcceptType = config.defaultAcceptType || 'application/json';
 
     // extract endpoint and path from url
-    var invokeUrl = 'https://6nqa6p5wjg.execute-api.us-west-2.amazonaws.com/dev';
+    var invokeUrl = 'https://epdtvvk4b4.execute-api.us-west-2.amazonaws.com/dev';
     var endpoint = /(^https?:\/\/[^\/]+)/g.exec(invokeUrl)[1];
     var pathComponent = invokeUrl.substring(endpoint.length);
 
@@ -92,11 +92,11 @@ apigClientFactory.newClient = function (config) {
     apigClient.adminOptions = function (params, body, additionalParams) {
         if(additionalParams === undefined) { additionalParams = {}; }
         
-        additionalParams = {
-            headers: {
-                'Access-Control-Allow-Origin': '*'
-            }
-        }
+        // additionalParams = {
+        //     headers: {
+        //         'Access-Control-Allow-Origin': '*'
+        //     }
+        // }
 
 
         apiGateway.core.utils.assertParametersDefined(params, [], ['body']);

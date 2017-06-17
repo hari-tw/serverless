@@ -3,13 +3,13 @@
 # CognitoIdentityPool + S3 + DyanmoDB
 # ********************************************
 
-frameworkVersion: ">=1.15.1 <2.0.0"
-service: "${self:provider.environment.SERVICE}"
+frameworkVersion: '>=1.15.1 <2.0.0'
+service: '${self:provider.environment.SERVICE}'
 
 # Custom variables
 # ===================================================================
 custom:
-  stage: "${opt:stage, self:provider.stage}"
+  stage: '${opt:stage, self:provider.stage}'
   babelPresets:
     - env
   s3Bucket: ${self:provider.environment.S3_BUCKET}
@@ -28,9 +28,10 @@ provider:
   timeout: 30
   memorySize: 128
   versionFunctions: true
+  role: GlobalRole
   vpc:
     securityGroupIds:
-      - "Fn::GetAtt": ServerlessSecurityGroup.GroupId
+      - 'Fn::GetAtt': ServerlessSecurityGroup.GroupId
     subnetIds:
       - Ref: ServerlessSubnetA
       - Ref: ServerlessSubnetB
@@ -38,20 +39,21 @@ provider:
 
   stackTags: # Optional CF stack tags
     key: 'sless'
-  stackPolicy: # Optional CF stack policy. It allows updates to all resources except deleting/replacing DynamoDB Table (use with caution!)
-    - Effect: Allow
-      Principal: "*"
-      Action: "Update:*"
-      Resource: "*"
-    - Effect: Deny
-      Principal: "*"
-      Action:
-        - Update:Replace
-        - Update:Delete
-      Condition:
-        StringEquals:
-          ResourceType:
-            - AWS::DynamoDB::Table
+  # stackPolicy: # Optional CF stack policy. It allows updates to all resources except deleting/replacing DynamoDB Table (use with caution!)
+  #   - Effect: Allow
+  #     Principal: '*'
+  #     Action:
+  #       - Update:*
+  #     Resource: '*'
+  #   - Effect: Deny
+  #     Principal: '*'
+  #     Action:
+  #       - Update:Replace
+  #       - Update:Delete
+  #     Condition:
+  #       StringEquals:
+  #         ResourceType:
+  #           - AWS::DynamoDB::Table
 
 # The `Functions` you want to deploy
 # ===================================================================
@@ -61,31 +63,31 @@ functions:
     events:
       - http:
           method: get
-          path: "/"
+          path: '/'
       - http:
           method: get
-          path: "how-it-works"
+          path: 'how-it-works'
       - http:
           method: get
-          path: "about"
+          path: 'about'
       - http:
           method: get
-          path: "contact"
+          path: 'contact'
       - schedule:
           rate: rate(15 minutes)
           enabled: ${self:provider.environment.WARMUP}
       - http:
           method: get
-          path: "{anything}"
+          path: '{anything}'
       - http:
           method: post
-          path: "{anything}"
+          path: '{anything}'
       - http:
           method: put
-          path: "{anything}"
+          path: '{anything}'
       - http:
           method: patch
-          path: "{anything}"
+          path: '{anything}'
 
   # Admin
   # -------------------------------------------------------
@@ -96,6 +98,7 @@ functions:
           path: admin
           method: get
           cors: true
+          integration: lambda
           authorizer: aws_iam
     # warmup: true
 
@@ -164,15 +167,16 @@ functions:
 # Raw AWS CloudFormation goes in here.
 # ===================================================================
 resources:
+  Description: ${self:service} [${self:provider.environment.STAGE}] template
   Resources:
     ## VPC
     ServerlessVPC:
       Type: AWS::EC2::VPC
       Properties:
-        CidrBlock: "10.0.0.0/16"
+        CidrBlock: '10.0.0.0/16'
         Tags:
         - Key: Name
-          Value: "${self:service}-${self:provider.stage}"
+          Value: '${self:service}-${self:provider.stage}'
     ServerlessSubnetA:
       DependsOn: ServerlessVPC
       Type: AWS::EC2::Subnet
@@ -180,10 +184,10 @@ resources:
         VpcId:
           Ref: ServerlessVPC
         AvailabilityZone: ${self:provider.region}a
-        CidrBlock: "10.0.0.0/24"
+        CidrBlock: '10.0.0.0/24'
         Tags:
         - Key: Name
-          Value: "${self:service}-${self:provider.stage}-a"
+          Value: '${self:service}-${self:provider.stage}-a'
     ServerlessSubnetB:
       DependsOn: ServerlessVPC
       Type: AWS::EC2::Subnet
@@ -191,10 +195,10 @@ resources:
         VpcId:
           Ref: ServerlessVPC
         AvailabilityZone: ${self:provider.region}b
-        CidrBlock: "10.0.1.0/24"
+        CidrBlock: '10.0.1.0/24'
         Tags:
         - Key: Name
-          Value: "${self:service}-${self:provider.stage}-b"
+          Value: '${self:service}-${self:provider.stage}-b'
     ServerlessSubnetC:
       DependsOn: ServerlessVPC
       Type: AWS::EC2::Subnet
@@ -202,10 +206,10 @@ resources:
         VpcId:
           Ref: ServerlessVPC
         AvailabilityZone: ${self:provider.region}c
-        CidrBlock: "10.0.2.0/24"
+        CidrBlock: '10.0.2.0/24'
         Tags:
         - Key: Name
-          Value: "${self:service}-${self:provider.stage}-c"
+          Value: '${self:service}-${self:provider.stage}-c'
     ServerlessSecurityGroup:
       DependsOn: ServerlessVPC
       Type: AWS::EC2::SecurityGroup
@@ -215,14 +219,66 @@ resources:
           Ref: ServerlessVPC
         Tags:
         - Key: Name
-          Value: "${self:service}-${self:provider.stage}-serverless"
+          Value: '${self:service}-${self:provider.stage}-serverless'
+
+    ## Cognito
+    CognitoIdentityPool:
+      Type: AWS::Cognito::IdentityPool
+      Properties:
+        IdentityPoolName: ${self:provider.environment.COGNITO_IDENTITY_POOL}
+        AllowUnauthenticatedIdentities: false
+        SupportedLoginProviders:
+          'graph.facebook.com': ${self:provider.environment.FACBOOK_APP_ID}
+
+    CognitoIdentityPoolRoleAttachment:
+      Type: AWS::Cognito::IdentityPoolRoleAttachment
+      Properties:
+        IdentityPoolId:
+          Ref: CognitoIdentityPool
+        Roles:
+          authenticated:
+            'Fn::GetAtt': [ AuthenticatedRole, Arn ]
+          # unauthenticated:
+          #   'Fn::GetAtt': [ UnauthenticatedRole, Arn ]
+
+    AuthenticatedRole:
+      Type: AWS::IAM::Role
+      Properties:
+        RoleName: '${self:service}-authenticated-role'
+        AssumeRolePolicyDocument:
+          Version: '2012-10-17'
+          Statement:
+            -
+              Effect: 'Allow'
+              Principal:
+                Federated:
+                  - 'cognito-identity.amazonaws.com'
+              Action:
+                - sts:AssumeRoleWithWebIdentity
+              Condition:
+                StringEquals:
+                  cognito-identity.amazonaws.com:aud:
+                    Ref: CognitoIdentityPool
+                ForAnyValue:StringLike:
+                  cognito-identity.amazonaws.com:amr: 'authenticated'
+        Path: '/'
+        Policies:
+          - PolicyName: '${self:service}-cognito-authenticated-policy'
+            PolicyDocument:
+              Version: '2012-10-17'
+              Statement:
+                -
+                  Effect: 'Allow'
+                  Action:
+                    - execute-api:Invoke
+                  Resource: arn:aws:execute-api:${self:provider.region}:${self:provider.environment.ACCOUNT_ID}:*/*
 
     ## DynamoDB
     UsersDynamoDBTable:
       Type: AWS::DynamoDB::Table
       DeletionPolicy: Retain
       Properties:
-        TableName: "${self:provider.environment.TABLE_USERS}"
+        TableName: '${self:provider.environment.TABLE_USERS}'
         AttributeDefinitions:
           - AttributeName: id
             AttributeType: S
@@ -252,7 +308,7 @@ resources:
           Statement:
             - Sid: PublicReadGetObject
               Effect: Allow
-              Principal: "*"
+              Principal: '*'
               Action:
               - s3:GetObject
               Resource: arn:aws:s3:::${self:custom.s3Bucket}/*
@@ -265,7 +321,7 @@ resources:
           Origins:
             - DomainName: ${self:custom.s3Bucket}.s3.amazonaws.com
               ## An identifier for the origin which must be unique within the distribution
-              Id: "S3-${self:custom.s3Bucket}"
+              Id: 'S3-${self:custom.s3Bucket}'
               CustomOriginConfig:
                 HTTPPort: 80
                 HTTPSPort: 443
@@ -290,7 +346,7 @@ resources:
               - HEAD
               - OPTIONS
             ## The origin id defined above
-            TargetOriginId: "S3-${self:custom.s3Bucket}"
+            TargetOriginId: 'S3-${self:custom.s3Bucket}'
             ## Defining if and how the QueryString and Cookies are forwarded to the origin which in this case is S3
             ForwardedValues:
               QueryString: 'false'
@@ -307,19 +363,11 @@ resources:
           #   Bucket: ${sef:service}-logs.s3.amazonaws.com
           #   Prefix: ${sef:service}
 
-    ## Cognito
-    CognitoIdentityPool:
-      Type: AWS::Cognito::IdentityPool
-      Properties:
-        IdentityPoolName: "${self:provider.environment.COGNITO_IDENTITY_POOL}"
-        AllowUnauthenticatedIdentities: false
-        # SupportedLoginProviders:
-
     ## Role
     GlobalRole:
       Type: AWS::IAM::Role
       Properties:
-        RoleName: "${self:service}-lambda-role"
+        RoleName: '${self:service}-lambda-role'
         AssumeRolePolicyDocument:
           Version: '2012-10-17'
           Statement:
@@ -327,11 +375,12 @@ resources:
               Principal:
                 Service:
                   - lambda.amazonaws.com
+                  - apigateway.amazonaws.com
               Action: sts:AssumeRole
         ManagedPolicyArns:
           - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
         Policies:
-          - PolicyName: "${self:service}-lambda-policy"
+          - PolicyName: '${self:service}-lambda-policy'
             PolicyDocument:
               Version: '2012-10-17'
               Statement:
@@ -380,14 +429,16 @@ resources:
                     - iam:PutRolePolicy
                     - sts:AssumeRole
                     - lambda:InvokeFunction
-                  Resource: "*"
+                    - execute-api:Invoke
+                  Resource: '*'
+
 
   ## In order to print out the hosted domain via `serverless info` we need to define the DomainName output for CloudFormation
   Outputs:
     # UsersTableArn:
     #   Description: The ARN for the User's Table
     #   Value:
-    #     "Fn::GetAtt": [ usersTable, Arn ]
+    #     'Fn::GetAtt': [ usersTable, Arn ]
     #   Export:
     #     Value: ${self:service}:${self:custom.stage}:UsersTableArn # see Fn::ImportValue to use in other services and http://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/outputs-section-structure.html for documentation on use.
     WebAppCloudFrontDistributionUri:

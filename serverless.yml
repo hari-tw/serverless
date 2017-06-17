@@ -3,12 +3,13 @@
 # CognitoIdentityPool
 # ********************************************
 
-frameworkVersion: ">=1.15.3 <2.0.0"
-service: "${self:provider.environment.SERVICE}"
+frameworkVersion: '>=1.15.3 <2.0.0'
+service: '${self:provider.environment.SERVICE}'
 
 # Custom variables
+# ===================================================================
 custom:
-  stage: "${opt:stage, self:provider.stage}"
+  stage: '${opt:stage, self:provider.stage}'
   babelPresets:
     - env
   s3Bucket: ${self:provider.environment.S3_BUCKET}
@@ -28,13 +29,6 @@ provider:
   memorySize: 128
   versionFunctions: true
   role: GlobalRole
-  # vpc:
-  #   securityGroupIds:
-  #     - "Fn::GetAtt": ServerlessSecurityGroup.GroupId
-  #   subnetIds:
-  #     - Ref: ServerlessSubnetA
-  #     - Ref: ServerlessSubnetB
-  #     - Ref: ServerlessSubnetC
 
 # The `Functions` you want to deploy
 # ===================================================================
@@ -47,111 +41,38 @@ functions:
       - http:
           path: admin
           method: get
-          integration: lambda
           cors: true
-            # origin: '*'
-            # headers:
-            #   - Content-Type
-            #   - X-Amz-Date
-            #   - Authorization
-            #   - X-Api-Key
-            #   - X-Amz-Security-Token
-            #   - X-Amz-User-Agent
-            #   - Access-Control-Allow-Origin
           authorizer: aws_iam
-          # response:
-          #   headers:
-          #     Content-Type: "'application/json'"
-          #   statusCodes:
-          #       200:
-          #           pattern: '' # Default response method
-
+          integration: lambda
 
 # The `Resources` your `Functions` use.  Raw AWS CloudFormation goes in here.
 resources:
   Description: ${self:service} [${self:provider.environment.STAGE}] template
   Resources:
-    ## VPC
-    # ServerlessVPC:
-    #   Type: AWS::EC2::VPC
-    #   Properties:
-    #     CidrBlock: "10.0.0.0/16"
-    #     Tags:
-    #     - Key: Name
-    #       Value: "${self:service}-${self:provider.stage}"
-    # ServerlessSubnetA:
-    #   DependsOn: ServerlessVPC
-    #   Type: AWS::EC2::Subnet
-    #   Properties:
-    #     VpcId:
-    #       Ref: ServerlessVPC
-    #     AvailabilityZone: ${self:provider.region}a
-    #     CidrBlock: "10.0.0.0/24"
-    #     Tags:
-    #     - Key: Name
-    #       Value: "${self:service}-${self:provider.stage}-a"
-    # ServerlessSubnetB:
-    #   DependsOn: ServerlessVPC
-    #   Type: AWS::EC2::Subnet
-    #   Properties:
-    #     VpcId:
-    #       Ref: ServerlessVPC
-    #     AvailabilityZone: ${self:provider.region}b
-    #     CidrBlock: "10.0.1.0/24"
-    #     Tags:
-    #     - Key: Name
-    #       Value: "${self:service}-${self:provider.stage}-b"
-    # ServerlessSubnetC:
-    #   DependsOn: ServerlessVPC
-    #   Type: AWS::EC2::Subnet
-    #   Properties:
-    #     VpcId:
-    #       Ref: ServerlessVPC
-    #     AvailabilityZone: ${self:provider.region}c
-    #     CidrBlock: "10.0.2.0/24"
-    #     Tags:
-    #     - Key: Name
-    #       Value: "${self:service}-${self:provider.stage}-c"
-    # ServerlessSecurityGroup:
-    #   DependsOn: ServerlessVPC
-    #   Type: AWS::EC2::SecurityGroup
-    #   Properties:
-    #     GroupDescription: SecurityGroup for Serverless Functions
-    #     VpcId:
-    #       Ref: ServerlessVPC
-    #     Tags:
-    #     - Key: Name
-    #       Value: "${self:service}-${self:provider.stage}-serverless"
-
     ## Cognito
     CognitoIdentityPool:
       Type: AWS::Cognito::IdentityPool
       Properties:
-        IdentityPoolName: "${self:provider.environment.COGNITO_IDENTITY_POOL}"
+        IdentityPoolName: ${self:provider.environment.COGNITO_IDENTITY_POOL}
         AllowUnauthenticatedIdentities: false
         SupportedLoginProviders:
-          "graph.facebook.com": ${self:provider.environment.FACBOOK_APP_ID}
-          # "api.twitter.com": "MyTwitterConsumerKey;MyTwitterConsumerSecret"
+          'graph.facebook.com': ${self:provider.environment.FACBOOK_APP_ID}
 
     CognitoIdentityPoolRoleAttachment:
-      Type: "AWS::Cognito::IdentityPoolRoleAttachment"
+      Type: AWS::Cognito::IdentityPoolRoleAttachment
       Properties:
         IdentityPoolId:
           Ref: CognitoIdentityPool
-        # RoleMappings:
-        #   "graph.facebook.com":
-        #     Type: Token
-        #     AmbiguousRoleResolution: 'AuthenticatedRole'
         Roles:
           authenticated:
-            "Fn::GetAtt": [ AuthenticatedRole, Arn ]
+            'Fn::GetAtt': [ AuthenticatedRole, Arn ]
           # unauthenticated:
-          #   "Fn::GetAtt": [ UnauthenticatedRole, Arn ]
+          #   'Fn::GetAtt': [ UnauthenticatedRole, Arn ]
 
     AuthenticatedRole:
       Type: AWS::IAM::Role
       Properties:
-        RoleName: "${self:service}-authenticated-role"
+        RoleName: '${self:service}-authenticated-role'
         AssumeRolePolicyDocument:
           Version: '2012-10-17'
           Statement:
@@ -159,57 +80,32 @@ resources:
               Effect: 'Allow'
               Principal:
                 Federated:
-                  - "cognito-identity.amazonaws.com"
+                  - 'cognito-identity.amazonaws.com'
               Action:
                 - sts:AssumeRoleWithWebIdentity
               Condition:
                 StringEquals:
                   cognito-identity.amazonaws.com:aud:
                     Ref: CognitoIdentityPool
-                  # arn:aws:cognito-identity:${self:provider.region}:${self:provider.environment.ACCOUNT_ID}:identitypool/*
                 ForAnyValue:StringLike:
                   cognito-identity.amazonaws.com:amr: 'authenticated'
-        Path: "/"
+        Path: '/'
         Policies:
-          - PolicyName: "${self:service}-cognito-authenticated-policy"
+          - PolicyName: '${self:service}-cognito-authenticated-policy'
             PolicyDocument:
-              Version: "2012-10-17"
+              Version: '2012-10-17'
               Statement:
                 -
                   Effect: 'Allow'
-                  Action: 'execute-api:Invoke'
+                  Action:
+                    - execute-api:Invoke
                   Resource: arn:aws:execute-api:${self:provider.region}:${self:provider.environment.ACCOUNT_ID}:*/*
-                  # Resource: 
-                  # - !Join [ "/", [!Join [ ":", [ "arn:aws:execute-api",!Ref 'AWS::Region',!Ref 'AWS::AccountId',!Ref CognitoDemoApi]], "*/GET/google"]]
-                  # - !Join [ "/", [!Join [ ":", [ "arn:aws:execute-api",!Ref 'AWS::Region',!Ref 'AWS::AccountId',!Ref CognitoDemoApi]], "*/POST/google"]]
-
-    # UnauthenticatedRole:
-    #   Type: AWS::IAM::Role
-    #   Properties:
-    #     RoleName: "${self:service}-unauthenticated-role"
-    #     AssumeRolePolicyDocument:
-    #       Version: '2012-10-17'
-    #       Statement:
-    #         -
-    #           Effect: 'Allow'
-    #           Principal:
-    #             Federated:
-    #               - "cognito-identity.amazonaws.com"
-    #           Action:
-    #             - sts:AssumeRoleWithWebIdentity
-    #           Condition:
-    #             StringEquals:
-    #               cognito-identity.amazonaws.com:aud:
-    #                 Ref: CognitoIdentityPool
-    #             ForAnyValue:StringLike:
-    #               cognito-identity.amazonaws.com:amr: 'unauthenticated'
-
 
     ## Role
     GlobalRole:
       Type: AWS::IAM::Role
       Properties:
-        RoleName: "${self:service}-lambda-role"
+        RoleName: '${self:service}-lambda-role'
         AssumeRolePolicyDocument:
           Version: '2012-10-17'
           Statement:
@@ -217,12 +113,12 @@ resources:
               Principal:
                 Service:
                   - lambda.amazonaws.com
-                  - apigateway.amazonaws.com # <<< CHANGED
+                  - apigateway.amazonaws.com
               Action: sts:AssumeRole
         ManagedPolicyArns:
           - arn:aws:iam::aws:policy/AWSXrayWriteOnlyAccess
         Policies:
-          - PolicyName: "${self:service}-lambda-policy"
+          - PolicyName: '${self:service}-lambda-policy'
             PolicyDocument:
               Version: '2012-10-17'
               Statement:
@@ -259,23 +155,6 @@ resources:
                     - dynamodb:UpdateItem
                     - dynamodb:DeleteItem
                   Resource: arn:aws:dynamodb:${self:provider.region}:*:*
-
-                # ApiGateway
-                # - Effect: Allow
-                #   Action:
-                #     - apigateway:GET
-                #     - apigateway:POST
-                #     - apigateway:PUT
-                #     - apigateway:PATCH
-                #     - apigateway:DELETE
-                #   Resource: arn:aws:apigateway:${self:provider.region}::*
-
-                # - Effect: Deny
-                #   Action:
-                #     - apigateway:OPTIONS
-                #   Resource: "*"
-                  # Resource: arn:aws:apigateway:${self:provider.region}::*
-
                 # Others
                 - Effect: Allow
                   Action:
@@ -289,11 +168,11 @@ resources:
                     - sts:AssumeRole
                     - lambda:InvokeFunction
                     - execute-api:Invoke
-                  Resource: "*"
+                  Resource: '*'
 
   Outputs:
     CognitoIdentityPoolId:
-      Description: 'Cognito'
+      Description: 'CognitoIdentityPoolId'
       Value:
         Ref: CognitoIdentityPool
 

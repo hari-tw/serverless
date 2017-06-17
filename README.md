@@ -2,11 +2,6 @@
 https://developers.facebook.com/apps/387706484915786/settings/
 
 
-### List of headers to enable on API Gateway
-Default: 
-'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,
-Access-Control-Allow-Origin,Origin,Content-Range,Content-Description,Content-Disposition,x-requested-with,X-ACCESS_TOKEN'
-
 # AWS Setup
 
 ### IAM
@@ -121,7 +116,7 @@ serverless remove
 ### Notes
 
 ```
-To use a federated identity, you set the API Gateway method to use “AWS_IAM” authorization. You use Cognito to create a role and associate it with your Cognito identity pool. You then use the Identity and Access Management (IAM) service to grant this role permission to call your API Gateway method.
+To use a federated identity, you set the API Gateway method to use [AWS_IAM] authorization. You use Cognito to create a role and associate it with your Cognito identity pool. You then use the Identity and Access Management (IAM) service to grant this role permission to call your API Gateway method.
 ```
 
 The IAM credentials can then be used to sign the request to API Gateway via the API Gateways SDK generated earlier. NOTE: The session token also needs to be passed in via the x-amz-security-token header and the API key as x-api-key.
@@ -186,3 +181,10 @@ The specified bucket does not exist
 Login to `console.aws.amazon.com/cloudformation` and manually delete the *Stack* before a fresh deploy.
 
 ---
+
+### NOTES
+
+##### List of headers to enable on API Gateway
+`Default:`
+'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,
+Access-Control-Allow-Origin,Origin,Content-Range,Content-Description,Content-Disposition,x-requested-with,X-ACCESS_TOKEN'

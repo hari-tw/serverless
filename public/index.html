@@ -4,7 +4,6 @@
     <title>LAB Home</title>
     <meta description="AWS Cognito + Facebook Login JavaScript Example">
     <meta charset="UTF-8">
-    <script src="lab.js"></script>
 
     <script type="text/javascript" src="apiGateway-js-sdk/lib/axios/dist/axios.standalone.js"></script>
     <script type="text/javascript" src="apiGateway-js-sdk/lib/CryptoJS/rollups/hmac-sha256.js"></script>
@@ -17,11 +16,12 @@
     <script type="text/javascript" src="apiGateway-js-sdk/lib/apiGatewayCore/simpleHttpClient.js"></script>
     <script type="text/javascript" src="apiGateway-js-sdk/lib/apiGatewayCore/utils.js"></script>
     <script type="text/javascript" src="apiGateway-js-sdk/apigClient.js"></script>
+
+    <!--<script type="text/javascript" src="app.js"></script>-->
   </head>
 <body>
 
   <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1.41.min.js"></script>
-  <!--<script src="app.js"></script>-->
 
   <script>
     AWS.config.region = 'us-west-2';
@@ -60,7 +60,7 @@
         testAPI();
 
         AWS.config.credentials = new AWS.CognitoIdentityCredentials({
-          IdentityPoolId: 'us-west-2:0a43d8df-ba2e-469d-abd9-bc8db1e2e3d8',
+          IdentityPoolId: 'us-west-2:494c53b0-e00a-4c41-b060-958e5db6c338',
           Logins: { 'graph.facebook.com': response.authResponse.accessToken },
 
           // optional name, defaults to web-identity
@@ -132,8 +132,7 @@
       var body = null
       var additionalParams = {
         headers: {
-          'Content-Type': 'application/json',
-          'Access-Control-Allow-Origin': '*'
+          'Content-Type': 'application/json'
         }
       };
 
