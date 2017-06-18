@@ -76,7 +76,6 @@ module.exports.get = (event, context, callback) => {
     .catch(error => {
       console.error(error)
       callback(new Error('Couldn\'t fetch item.'))
-      return
     })
 }
 
@@ -156,7 +155,6 @@ module.exports.update = (event, context, callback) => {
           error
         }))
       }
-      return
     })
 }
 
@@ -200,6 +198,5 @@ module.exports.delete = (event, context, callback) => {
           error
         }))
       }
-      return
     })
 }

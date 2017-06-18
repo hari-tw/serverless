@@ -1,6 +1,11 @@
 # Facebook setup
 https://developers.facebook.com/apps/387706484915786/settings/
 
+# Requirements
+```
+npm install fuse-box -g
+```
+
 
 # AWS Setup
 

@@ -10,3 +10,4 @@ env.yml
 # Compiled files
 .app
 .site
+.fusebox

@@ -32,8 +32,10 @@
   "devDependencies": {
     "babel-cli": "6.18.0",
     "babel-preset-env": "1.5.2",
+    "fuse-box": "^2.1.0",
     "serverless-babel-plugin": "0.2.0",
-    "serverless-single-page-app-plugin": "file:./plugins/serverless-single-page-app-plugin",
-    "serverless-stack-outputs-plugin": "file:./plugins/serverless-stack-outputs-plugin"
+    "serverless-single-page-app-plugin": "file:./serverless/plugins/serverless-single-page-app-plugin",
+    "serverless-stack-outputs-plugin": "file:./serverless/plugins/serverless-stack-outputs-plugin",
+    "typescript": "2.3.4"
   }
 }

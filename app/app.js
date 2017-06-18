@@ -1,4 +1,5 @@
-/* eslint-disable */
+import {a} from './admin'
+console.log(a)
 
 // Renders the page based on the current URL
 function renderApp() {
