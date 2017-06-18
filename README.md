@@ -188,3 +188,46 @@ Login to `console.aws.amazon.com/cloudformation` and manually delete the *Stack*
 `Default:`
 'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,
 Access-Control-Allow-Origin,Origin,Content-Range,Content-Description,Content-Disposition,x-requested-with,X-ACCESS_TOKEN'
+
+
+---
+
+### HUGO
+
+#### Installation
+
+```
+brew install hugo
+```
+
+#### Development
+
+To create a new post:
+
+```
+hugo create post/type-your-post-slug-here
+```
+
+
+To download a custom theme:
+
+```
+git clone .......git themes/type-the-theme-name-here
+```
+
+Add the theme name in the `config.toml` by configuring `theme=the-theme-name`.
+
+
+
+To run a livereload server:
+
+```
+hugo server -w
+```
+
+
+To generate static files for the public website:
+
+```
+hugo
+```

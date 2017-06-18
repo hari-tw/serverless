@@ -210,6 +210,7 @@ resources:
         Tags:
         - Key: Name
           Value: '${self:service}-${self:provider.stage}-c'
+
     ServerlessSecurityGroup:
       DependsOn: ServerlessVPC
       Type: AWS::EC2::SecurityGroup

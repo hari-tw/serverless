@@ -1,0 +1,21 @@
+baseURL: 'http://example.org/'
+languageCode: 'en-us'
+title: 'My New Hugo Site'
+theme: 'detox'
+publishDir: '../.site'
+
+googleAnalytics: ''
+disqusShortname: ''
+
+params:
+  name: 'Felipe'
+  description: 'desc...'
+  bio: 'Here is the Bio...'
+  twitter: '@hlibco'
+  enableRSS: true
+
+social:
+  twitter: ''
+  facebook: ''
+  instagram: ''
+  github: ''

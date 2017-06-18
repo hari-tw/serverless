@@ -15,8 +15,14 @@
   "main": "",
   "license": "MIT",
   "scripts": {
-    "static": "node server",
-    "expose": "./ngrok http 9000"
+    "s3": "cd serverless && serverless syncToS3",
+    "static": "node ./app/server",
+    "expose": "./ngrok http 9000",
+    "deploy": "./deploy.sh",
+    "remove": "./remove.sh",
+    "hugo": "hugo server -wDs ./site",
+    "hugo:build": "hugo -s ./site",
+    "seo": "curl https://google.com/webmasters/sitemaps/ping?sitemap=https://example.com/sitemap.xml && curl https://www.bing.com/ping?sitemap=https%3A%2F%2Fexample.com/sitemap.xml"
   },
   "dependencies": {
     "bluebird": "3.5.0",
