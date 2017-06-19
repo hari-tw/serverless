@@ -43,7 +43,7 @@ class ServerlessPlugin {
       's3',
       'sync',
       '../.site/',
-      `s3://${s3Bucket}/`,
+      `s3://${s3Bucket}/site/`,
       '--grants',
       'read=uri=http://acs.amazonaws.com/groups/global/AllUsers'
     ]

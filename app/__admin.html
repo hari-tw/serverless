@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>LAB Admin</title>
+    <meta charset="UTF-8">
+    <!--<script type="text/javascript" src="apiGateway-js-sdk/lib/axios/dist/axios.standalone.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/CryptoJS/rollups/hmac-sha256.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/CryptoJS/rollups/sha256.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/CryptoJS/components/hmac.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/CryptoJS/components/enc-base64.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/url-template/url-template.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/apiGatewayCore/sigV4Client.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/apiGatewayCore/apiGatewayClient.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/apiGatewayCore/simpleHttpClient.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/apiGatewayCore/utils.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/apigClient.js"></script>-->
+
+    <script type="text/javascript" src="bundle-app.js"></script>
+  </head>
+<body>
+
+<div id="app">
+  {{ message }}
+</div>
+
+<div id="root"></div>
+
+<script src="https://sdk.amazonaws.com/js/aws-sdk-2.1.41.min.js"></script>
+
+<script>
+
+
+
+(function(d, s, id) {
+  var js, fjs = d.getElementsByTagName(s)[0];
+  if (d.getElementById(id)) return;
+  js = d.createElement(s); js.id = id;
+  // js.src = "//connect.facebook.net/en_US/sdk.js";
+  js.src = "https://connect.facebook.net/en_US/sdk.js";
+  fjs.parentNode.insertBefore(js, fjs);
+}(document, 'script', 'facebook-jssdk'));
+
+window.fbAsyncInit = function() {
+  FB.init({
+    appId      : '387706484915786',
+    cookie     : true,
+    xfbml      : true,
+    version    : 'v2.9'
+  });
+  FB.getLoginStatus(updateCredentials);
+
+  // FB.login(updateCredentials, {
+  //   scope: 'email',
+  //   return_scopes: true
+  // });
+};
+
+function updateCredentials(response) {
+  var credentials = getCredentials()
+
+  if (credentials) {
+    credentials.accessToken = response.authResponse.accessToken
+  }
+
+  console.log(response)
+  console.log(credentials)
+
+  localStorage.setItem('credentials', credentials)
+}
+
+/**
+ * @param credentials {identityId, accessKey, secretKey, accessToken}
+ */
+function saveCredentials(AWScredentials) {
+  var credentials = {
+    identityId: AWScredentials.identityId,
+    accessKey: AWScredentials.accessKeyId,
+    secretKey: AWScredentials.secretAccessKey,
+    sessionToken: AWScredentials.sessionToken,
+    // accessToken: response.authResponse.accessToken
+  }
+
+  // Put the object into storage
+  console.log('Saving credentials to local storage');
+  console.log(JSON.stringify(credentials));
+  localStorage.setItem('credentials', JSON.stringify(credentials));
+  return credentials
+}
+
+function getCredentials() {
+  // Retrieve the object from storage
+  return localStorage.getItem('credentials');
+}
+
+function preRequest(callback) {
+  AWS.config.region = 'us-west-2'
+
+  var credentials = JSON.parse(getCredentials());
+  var accessToken = 'EAAFgnfNPfkoBALEYnY8npfeaS6HWfpqOxhf7VioYxbwZBN4a6I5MPtd45svhzjjnPC5sI0EagKryDR9XnosZABqXT3KexwrUR3AZAkMcTlq8ctkdbq6t9APsOeevZCRnlO3vsFKzvyHFQwflLLArZCteIAbnLZAxKkirnZCpc7rXZCcw6rK6JXqQwe4UG5uVadwZD'
+  if (!credentials) {
+    return false
+  }
+
+  AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+    IdentityPoolId: 'us-west-2:494c53b0-e00a-4c41-b060-958e5db6c338',
+    Logins: { 'graph.facebook.com': accessToken },
+    RoleSessionName: 'web'
+  });
+
+  AWS.config.credentials.clearCachedId()
+
+  AWS.config.credentials.get(callback)
+
+  // return AWS.config.credentials.get(function(err) {
+  //   if (err) {
+  //     console.log(err);
+  //     return false
+  //   }
+  //   console.log('token refreshed')
+
+  //   // Updating credentials
+  //   credentials = saveCredentials(AWS.config.credentials);
+
+  //   var options = {
+  //     accessKey: credentials.accessKey,
+  //     secretKey: credentials.secretKey,
+  //     sessionToken: credentials.sessionToken, //OPTIONAL: If you are using temporary credentials you must include the session token
+  //     // region: 'us-west-2',
+  //     systemClockOffset: 0, // OPTIONAL: An offset value in milliseconds to apply to signing time
+  //     retries: 2
+  //   };
+
+  //   return apigClientFactory.newClient(options)
+  // })
+}
+
+function testApiGateway() {
+  console.log('Trying testApiGateway()')
+
+  var callback = function (err) {
+    if (err) {
+      console.log(err)
+      console.log('error to execute testApiGateway() - token expired')
+      return false
+    }
+    console.log('call back testApiGateway() executed!')
+  }
+
+  preRequest(callback)
+
+  // if (!apigClient) {
+  //   console.log('Error in preRequest()')
+  //   return false
+  // }
+  // var params = null
+  // var body = null
+  // var additionalParams = {
+  //   headers: {
+  //     'Content-Type': 'application/json'
+  //   }
+  // };
+
+  // apigClient.adminGet(params, body, additionalParams)
+  // .then(function(result) {
+  //   // Add success callback code here.
+  //   console.log(result)
+  // }).catch( function(result) {
+  //   // Add error callback code here.
+  //   console.log(result)
+  // });
+}
+
+function loadAdmin(){
+  // We'll ensure this code runs only on the admin page
+  if(window.location.pathname == '/admin/' || true){
+    console.log('Is logged in')
+  } else {
+    window.location = '/index.html'
+  }
+}
+
+loadAdmin();
+</script>
+
+Admin!
+
+
+<br><br>
+<button onclick="testApiGateway();">TEST API GATEWAY (PRIVATE)</button>
+<br><br><br>
+
+
+  <nav>
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/about">About</a></li>
+      <li><a href="/admin.html">ADMIN</a></li>
+    </ul>
+  </nav>
+
+<main>MAIN...111.</main>
+
+</body>
+</html>

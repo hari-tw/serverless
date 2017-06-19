@@ -1,6 +1,13 @@
 # Facebook setup
 https://developers.facebook.com/apps/387706484915786/settings/
 
+Check if the `accessToken` is still valid:
+```
+https://graph.facebook.com/oauth/access_token_info?client_id=APP_ID&access_token=xxxxxxxxx
+```
+
+https://graph.facebook.com/oauth/access_token_info?client_id=387706484915786&access_token=xxxxxxxxx
+
 # Requirements
 ```
 npm install fuse-box -g

@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>LAB Home</title>
+    <meta description="AWS Cognito + Facebook Login JavaScript Example">
+    <meta charset="UTF-8">
+
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/axios/dist/axios.standalone.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/CryptoJS/rollups/hmac-sha256.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/CryptoJS/rollups/sha256.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/CryptoJS/components/hmac.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/CryptoJS/components/enc-base64.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/url-template/url-template.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/apiGatewayCore/sigV4Client.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/apiGatewayCore/apiGatewayClient.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/apiGatewayCore/simpleHttpClient.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/lib/apiGatewayCore/utils.js"></script>
+    <script type="text/javascript" src="apiGateway-js-sdk/apigClient.js"></script>
+
+    <!--<script type="text/javascript" src="app.js"></script>-->
+  </head>
+<body>
+aaaa
+  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.1.41.min.js"></script>
+
+  <script>
+    AWS.config.region = 'us-west-2';
+    var isAuthenticated = false;
+
+    (function(d, s, id) {
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) return;
+      js = d.createElement(s); js.id = id;
+      // js.src = "//connect.facebook.net/en_US/sdk.js";
+      js.src = "https://connect.facebook.net/en_US/sdk.js";
+      fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+
+    window.fbAsyncInit = function() {
+      FB.init({
+        appId      : '387706484915786',
+        cookie     : true,
+        xfbml      : true,
+        version    : 'v2.9'
+      });
+      // FB.getLoginStatus(statusChangeCallback);
+
+      FB.login(statusChangeCallback, {
+        scope: 'email',
+        return_scopes: true
+      });
+    };
+    var _resp;
+    function statusChangeCallback(response) {
+      console.log('statusChangeCallback', response);
+
+      if (response.status === 'connected' && response.authResponse) {
+        isAutenticated = true;
+
+        testAPI();
+
+        AWS.config.credentials = new AWS.CognitoIdentityCredentials({
+          IdentityPoolId: 'us-west-2:494c53b0-e00a-4c41-b060-958e5db6c338',
+          Logins: { 'graph.facebook.com': response.authResponse.accessToken },
+
+          // optional name, defaults to web-identity
+          // See the RoleSessionName param for AWS.STS.assumeRoleWithWebIdentity (linked below)
+          RoleSessionName: 'web'
+        });
+
+        AWS.config.credentials.clearCachedId();
+
+        AWS.config.credentials.get(function(err) {
+          if (err) return console.log("Error", err);
+          console.log("Cognito Identity Id", AWS.config.credentials.identityId);
+
+          var credentials = {
+            identityId: AWS.config.credentials.identityId,
+            accessKey: AWS.config.credentials.accessKeyId,
+            secretKey: AWS.config.credentials.secretAccessKey,
+            sessionToken: AWS.config.credentials.sessionToken,
+            accessToken: response.authResponse.accessToken
+          };
+
+          // Store credentials in local storage
+          saveCredentials(credentials);
+        });
+
+        // AWS.config.credentials.refresh(function(resp){
+        //   console.log('Refreshing...', resp);
+
+        //   AWS.config.credentials.get(function(err) {
+        //     if (err) return console.log("Error", err);
+        //     console.log("Cognito Identity Id", AWS.config.credentials.identityId);
+        //   });
+        // });
+
+        // Display the Logout button
+        document.getElementById('logout').innerHTML = 'Logout';
+
+      } else if (response.status === 'not_authorized') {
+        document.getElementById('status').innerHTML = 'Please log into this app.';
+      } else {
+        document.getElementById('status').innerHTML = 'Please log into Facebook.';
+      }
+    }
+
+    function testAPI() {
+      console.log('Welcome!  Fetching your information.... ');
+      FB.api('/me?fields=id,name,email', function(response) {
+        console.log('Successful login for: ' + response.name);
+        console.log(response);
+        document.getElementById('status').innerHTML = 'Thanks for logging in, ' + response.name + '!';
+      });
+    }
+
+    function testApiGateway() {
+      var credentials = JSON.parse(getCredentials());
+      var options = {
+        accessKey: credentials.accessKey,
+        secretKey: credentials.secretKey,
+        sessionToken: credentials.sessionToken, //OPTIONAL: If you are using temporary credentials you must include the session token
+        region: 'us-west-2',
+        systemClockOffset: 0, // OPTIONAL: An offset value in milliseconds to apply to signing time
+        retries: 2, // OPTIONAL: Number of times to retry before failing. Uses axon-retry plugin.
+        retryCondition: (err) => { // OPTIONAL: Callback to further control if request should be retried.  Uses axon-retry plugin.
+          return err.response.status === 500;
+        }
+      };
+
+      var apigClient = apigClientFactory.newClient(options);
+      var params = null
+      var body = null
+      var additionalParams = {
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      };
+
+      apigClient.adminGet(params, body, additionalParams)
+      .then(function(result) {
+        // Add success callback code here.
+        console.log(result)
+      }).catch( function(result) {
+        // Add error callback code here.
+        console.log(result)
+      });
+    }
+
+    /**
+     * @param credentials {identityId, accessKey, secretKey, accessToken}
+     */
+    function saveCredentials(credentials) {
+      // Put the object into storage
+      console.log('Saving credentials to local storage');
+      console.log(JSON.stringify(credentials));
+      localStorage.setItem('credentials', JSON.stringify(credentials));
+    }
+
+    function getCredentials() {
+      // Retrieve the object from storage
+      return localStorage.getItem('credentials');
+    }
+
+    function saveUser(user) {
+      localStorage.setItem('user', JSON.stringify(user));
+    }
+
+    function getUser() {
+      return localStorage.getItem('user');
+    }
+
+    function logout() {
+      FB.logout(function(response) {
+        console.log('Loging out...', response);
+        // We'll clean out the localStorage
+        // The Cognito service sets various items here, so we'll make sure to empty out everything to log a user out.
+        localStorage.clear();
+        location.reload();
+        // window.location = '/';
+      });
+    }
+
+    var user = localStorage.getItem('token');
+    console.log('user >> '+ user);
+  </script>
+
+
+  <fb:login-button scope="public_profile,email" onlogin="FB.getLoginStatus(statusChangeCallback);"></fb:login-button>
+
+  <div id="status"></div>
+
+  <div id="logout" onclick="logout();"></div>
+
+  <br><br>
+  <button onclick="testApiGateway();">TEST API GATEWAY</button>
+  <br><br><br>
+
+  <nav>
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/about">About</a></li>
+      <li><a href="/admin.html">ADMIN</a></li>
+    </ul>
+  </nav>
+
+</body>
+</html>

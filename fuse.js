@@ -1,108 +1,73 @@
 const {
-    // BabelPlugin,
     FuseBox,
-    // SassPlugin,
-    // CSSPlugin,
+    SVGPlugin,
+    StylusPlugin,
+    CSSPlugin,
+    BabelPlugin,
+    QuantumPlugin,
     WebIndexPlugin,
-    // TypeScriptHelpers,
-    // JSONPlugin,
-    // HTMLPlugin,
-    // Sparky,
-    // QuantumPlugin,
+    Sparky,
+    HTMLPlugin,
+    EnvPlugin,
+    UglifyJSPlugin
 } = require('fuse-box')
 
-let app, vendor, isProduction
+const express = require('express')
+const path = require('path')
 
-const fuse = FuseBox.init({
-  homeDir: 'app',
-  output: 'app/bundle-$name.js',
-  cache: false,
-  log: false,
-  debug: false,
-  globals: { default: 'mySuperLib' },
-  sourceMaps: true,
-  hash: isProduction,
-  plugins: [
-    WebIndexPlugin({
-      title: 'FuseBox + Angular',
-      template: 'app/admin.html'
-    }),
-    // [
-    //   // SassPlugin({
-    //   //   outputStyle: 'compressed'
-    //   // }),
-    //   // CSSPlugin()
-    // ]
-  ]
+let fuse, app, vendor, isProduction
+
+Sparky.task('config', () => {
+  fuse = new FuseBox({
+    homeDir: 'app/',
+    output: '.app/$name.js',
+    sourceMaps: !isProduction,
+    hash: isProduction,
+    log: true,
+    debug: true,
+    plugins: [
+      EnvPlugin({ NODE_ENV: isProduction ? 'production' : 'development' }),
+      SVGPlugin(),
+      [StylusPlugin(), CSSPlugin()],
+      CSSPlugin(),
+      BabelPlugin(),
+      WebIndexPlugin({
+        title: 'FuseBox + React',
+        template: 'app/index.html'
+      }),
+      isProduction && QuantumPlugin({
+        removeExportsInterop: false,
+        uglify: true
+      })
+    ]
+  })
+  // vendor
+  vendor = fuse.bundle('vendor').target('browser').instructions('~ index.jsx')
+
+  // bundle app
+  app = fuse.bundle('app').target('browser').instructions('!> [index.jsx]')
 })
 
-app = fuse.bundle('app')
-    .sourceMaps(!isProduction)
-    // .instructions(' !> [app.js]')
-    .instructions(`> app.js`)
-    .target('browser')
+Sparky.task('default', ['clean', 'config'], () => {
+  // Configure development server
+  fuse.dev({ root: false, port: 9000 }, server => {
+    const app = server.httpServer.app
+    const dist = path.join(__dirname, '.app')
+    app.use('/', express.static(path.join(dist, '')))
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(dist, 'index.html'))
+    })
+  })
 
-fuse.run()
+  // add dev instructions
+  app.watch().hmr()
+  return fuse.run()
+})
 
-
-// const {
-//     BabelPlugin,
-//     FuseBox,
-//     SassPlugin,
-//     CSSPlugin,
-//     WebIndexPlugin,
-//     TypeScriptHelpers,
-//     JSONPlugin,
-//     HTMLPlugin,
-//     Sparky,
-//     QuantumPlugin,
-// } = require('fuse-box');
-
-// let fuse, app, vendor, isProduction;
-
-// Sparky.task("config", () => {
-//     fuse = FuseBox.init({
-//         homeDir: `src/`,
-//         output: `dist/$name.js`,
-//         hash: isProduction,
-//         plugins: [
-//             WebIndexPlugin({
-//                 title: 'FuseBox + Angular',
-//                 template: 'src/index.html',
-//             }), [
-//                 SassPlugin({
-//                     outputStyle: 'compressed',
-//                 }),
-//                 CSSPlugin(),
-//             ],
-//             JSONPlugin(),
-//             HTMLPlugin({
-//                 useDefault: false,
-//             }),
-//             // http://fuse-box.org/page/quantum
-//             isProduction && QuantumPlugin({
-//                 uglify: true
-//             }),
-//         ],
-//     });
-
-//     vendor = fuse.bundle('vendor').instructions(' ~ main.ts');
-//     app = fuse.bundle('app')
-//         .sourceMaps(!isProduction)
-//         .instructions(' !> [main.ts]');
-// });
-
-// Sparky.task("default", ["clean", "config"], () => {
-//     fuse.dev();
-//     // add dev instructions
-//     app.watch().hmr()
-//     return fuse.run();
-// });
-
-// Sparky.task("clean", () => Sparky.src("dist/").clean("dist/"));
-// Sparky.task("prod-env", ["clean"], () => { isProduction = true })
-// Sparky.task("dist", ["prod-env", "config"], () => {
-//     // comment out to prevent dev server from running (left for the demo)
-//     fuse.dev();
-//     return fuse.run();
-// });
+Sparky.task('clean', () => Sparky.src('.app/').clean('.app/'))
+Sparky.task('prod-env', ['clean'], () => { isProduction = true })
+Sparky.task('dist', ['prod-env', 'config'], () => {
+  // comment out to prevent dev server from running (left for the demo)
+  fuse.dev()
+  return fuse.run()
+})
