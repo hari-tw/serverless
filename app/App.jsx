@@ -12,7 +12,7 @@ class App extends React.Component {
       <div className="App">
         <div className="App-header rio">
 
-          <h2>Welcome to React11!</h2>
+          <h2>Welcome to React</h2>
         </div>
         <p className="App-intro">
           To get started, edit

@@ -20,7 +20,7 @@ let fuse, app, vendor, isProduction
 Sparky.task('config', () => {
   fuse = new FuseBox({
     homeDir: 'app/',
-    output: '.app/$name.js',
+    output: '.dist/app/$name.js',
     sourceMaps: !isProduction,
     hash: isProduction,
     log: true,
@@ -52,7 +52,7 @@ Sparky.task('default', ['clean', 'config'], () => {
   // Configure development server
   fuse.dev({ root: false, port: 9000 }, server => {
     const app = server.httpServer.app
-    const dist = path.join(__dirname, '.app')
+    const dist = path.join(__dirname, '.dist/app')
     app.use('/', express.static(path.join(dist, '')))
     app.get('*', (req, res) => {
       res.sendFile(path.join(dist, 'index.html'))
@@ -64,7 +64,7 @@ Sparky.task('default', ['clean', 'config'], () => {
   return fuse.run()
 })
 
-Sparky.task('clean', () => Sparky.src('.app/').clean('.app/'))
+Sparky.task('clean', () => Sparky.src('.dist/app/').clean('.dist/app/'))
 Sparky.task('prod-env', ['clean'], () => { isProduction = true })
 Sparky.task('dist', ['prod-env', 'config'], () => {
   // comment out to prevent dev server from running (left for the demo)

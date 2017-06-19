@@ -22,7 +22,7 @@
     "deploy": "./deploy.sh",
     "remove": "./remove.sh",
     "site": "hugo server -wDs ./site",
-    "site:build": "hugo -s ./site",
+    "site:build": "hugo -s ./site -d ../.dist/site",
     "publish": "curl https://google.com/webmasters/sitemaps/ping?sitemap=https://example.com/sitemap.xml && curl https://www.bing.com/ping?sitemap=https%3A%2F%2Fexample.com/sitemap.xml"
   },
   "dependencies": {

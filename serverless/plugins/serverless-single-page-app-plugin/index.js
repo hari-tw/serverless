@@ -34,34 +34,7 @@ class ServerlessPlugin {
     this.options.region = this.options.region || this.serverless.variables.service.provider.region
 
     const s3Bucket = this.serverless.variables.service.custom.s3Bucket
-    // Sync site
-    const argsSite = [
-      '--profile',
-      this.options.profile,
-      '--region',
-      this.options.region,
-      's3',
-      'sync',
-      '../.site/',
-      `s3://${s3Bucket}/site/`,
-      '--grants',
-      'read=uri=http://acs.amazonaws.com/groups/global/AllUsers'
-    ]
-
-    const resultSite = spawnSync('aws', argsSite)
-    const stdoutSite = resultSite.stdout.toString()
-    const sterrSite = resultSite.stderr.toString()
-    if (stdoutSite) {
-      this.serverless.cli.log(stdoutSite)
-    }
-    if (sterrSite) {
-      this.serverless.cli.log(sterrSite)
-    }
-    if (!sterrSite) {
-      this.serverless.cli.log('Successfully synced Site to the S3 bucket')
-    }
-
-    // Sync app
+    // Sync dist folder
     const args = [
       '--profile',
       this.options.profile,
@@ -69,8 +42,8 @@ class ServerlessPlugin {
       this.options.region,
       's3',
       'sync',
-      '../app/',
-      `s3://${s3Bucket}/app/`,
+      '../.dist/',
+      `s3://${s3Bucket}/`,
       '--grants',
       'read=uri=http://acs.amazonaws.com/groups/global/AllUsers'
     ]

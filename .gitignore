@@ -8,6 +8,5 @@ node_modules
 env.yml
 
 # Compiled files
-.app
-.site
+.dist
 .fusebox
